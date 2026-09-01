@@ -44,3 +44,30 @@ CREATE TABLE IF NOT EXISTS processed_webhook_events (
 
 CREATE INDEX IF NOT EXISTS idx_keys_pool_free ON keys_pool (sku) WHERE order_id IS NULL;
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders (status);
+
+-- Платёж, полученный до/без соответствующего заказа (вебхук пришёл раньше
+-- создания заказа или не по порядку). Тот же паттерн атомарного INSERT-как-
+-- шлюза, что у processed_webhook_events, но ключ — order_id: это "последний
+-- известный факт оплаты по заказу, который ещё не применён". Создание
+-- заказа проверяет эту таблицу и сразу применяет запаркованный платёж —
+-- без опроса/фоновой задачи.
+CREATE TABLE IF NOT EXISTS pending_payments (
+  order_id    TEXT PRIMARY KEY,
+  status      TEXT NOT NULL, -- 'paid' | 'payment_failed'
+  event_id    TEXT NOT NULL,
+  received_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+
+-- Идемпотентность на стороне поставщика выдачи — не путать с
+-- processed_webhook_events (та про вебхуки платёжки, эта про контракт
+-- "поставщик кода"). Проверяется ПЕРВЫМ шагом при любом обращении к
+-- поставщику, до розыгрыша ошибки/таймаута. Это и есть защита от "ловушки
+-- таймаута": если поставщик уже выдал код на этот request_id (даже если
+-- наш клиент не дождался ответа в тот раз), повтор просто вернёт тот же
+-- code, не трогая пул ключей повторно.
+CREATE TABLE IF NOT EXISTS issuer_ledger (
+  request_id TEXT PRIMARY KEY,
+  code       TEXT NOT NULL,
+  order_id   TEXT NOT NULL REFERENCES orders(id),
+  provider   TEXT NOT NULL
+);
