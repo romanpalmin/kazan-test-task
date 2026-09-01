@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kazan Store — цифровые товары для геймеров</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <button class="catalog-toggle" id="catalogToggle" aria-expanded="false">
+        <span class="burger"></span> Каталог
+      </button>
+      <div class="catalog-menu" id="catalogMenu" hidden>
+        <a href="#">Игровые ключи</a>
+        <a href="#">Пополнения Steam</a>
+        <a href="#">Подписки</a>
+        <a href="#">Гифт-карты</a>
+      </div>
+      <div class="search">
+        <input type="text" placeholder="Поиск по каталогу..." />
+      </div>
+      <div class="header-icons" aria-hidden="true">👤</div>
+    </div>
+  </header>
+
+  <section class="banner" id="banner">
+    <div class="banner-track" id="bannerTrack">
+      <div class="banner-slide">Скидка 15% на пополнение Steam</div>
+      <div class="banner-slide">Новые ключи CS2 Prime уже в продаже</div>
+      <div class="banner-slide">Gift-карты PSN/Xbox — мгновенная доставка</div>
+    </div>
+    <button class="banner-arrow banner-arrow--prev" id="bannerPrev" aria-label="Предыдущий слайд">‹</button>
+    <button class="banner-arrow banner-arrow--next" id="bannerNext" aria-label="Следующий слайд">›</button>
+    <div class="banner-dots" id="bannerDots"></div>
+  </section>
+
+  <section class="services">
+    <div class="service-icon">Steam</div>
+    <div class="service-icon">Telegram</div>
+    <div class="service-icon">Roblox</div>
+    <div class="service-icon">PUBG Mobile</div>
+    <div class="service-icon">App Store</div>
+    <div class="service-icon">ChatGPT</div>
+    <div class="service-icon">PlayStation</div>
+    <div class="service-icon">TikTok</div>
+  </section>
+
+  <section class="topup">
+    <h2>Пополнение Steam</h2>
+    <div class="topup-row">
+      <input type="text" placeholder="Логин Steam" />
+      <div class="currency-switch" id="currencySwitch">
+        <button class="currency-option is-active" data-currency="RUB">₽</button>
+        <button class="currency-option" data-currency="USD">$</button>
+        <button class="currency-option" data-currency="KZT">₸</button>
+      </div>
+      <span class="topup-amount">500 ₽</span>
+      <button class="btn-primary">Оплатить</button>
+    </div>
+  </section>
+
+  <main>
+    <section class="products">
+      <h2>Популярные товары</h2>
+      <div class="product-grid" id="productGrid">
+        <p class="product-grid-loading">Загружаем каталог…</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/app.js" type="module"></script>
+</body>
+</html>

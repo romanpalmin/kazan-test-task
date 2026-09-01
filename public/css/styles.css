@@ -1,0 +1,281 @@
+:root {
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --text: #14161a;
+  --text-dim: #6b7280;
+  --border: #e3e5e9;
+  --accent: #16a34a;
+  --header-bg: #14161a;
+  --banner-bg: #1c1f26;
+  --radius: 10px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Header */
+.site-header {
+  background: var(--header-bg);
+  color: #fff;
+  position: relative;
+}
+.header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.catalog-toggle {
+  background: #24272f;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.catalog-toggle:hover { background: #2e323c; }
+.burger {
+  width: 16px;
+  height: 2px;
+  background: #fff;
+  position: relative;
+}
+.burger::before,
+.burger::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 16px;
+  height: 2px;
+  background: #fff;
+}
+.burger::before { top: -5px; }
+.burger::after { top: 5px; }
+
+.catalog-menu {
+  position: absolute;
+  top: 60px;
+  left: 20px;
+  background: #fff;
+  color: var(--text);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  z-index: 20;
+}
+/* [hidden] и .catalog-menu — одна специфичность (0,1,0), позже в каскаде
+   побеждает автор — без этого правила display:flex выше перебивал бы
+   hidden, и меню было бы видно даже с атрибутом hidden на месте. */
+.catalog-menu[hidden] { display: none; }
+.catalog-menu a {
+  padding: 10px 12px;
+  border-radius: 6px;
+  color: inherit;
+  text-decoration: none;
+  font-size: 14px;
+}
+.catalog-menu a:hover { background: var(--bg); }
+
+.search { flex: 1; }
+.search input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
+  background: #24272f;
+  color: #fff;
+  font-size: 14px;
+}
+.search input::placeholder { color: #8a8f99; }
+
+.header-icons { font-size: 18px; }
+
+/* Banner */
+.banner {
+  position: relative;
+  background: var(--banner-bg);
+  overflow: hidden;
+  height: 220px;
+}
+.banner-track {
+  display: flex;
+  height: 100%;
+  transition: transform 0.5s ease;
+}
+.banner-slide {
+  flex: 0 0 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 22px;
+  font-weight: 600;
+  text-align: center;
+  padding: 0 24px;
+  background: linear-gradient(135deg, #1c1f26, #2a2f3a);
+}
+.banner-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+  line-height: 1;
+}
+.banner-arrow:hover { background: rgba(255, 255, 255, 0.22); }
+.banner-arrow--prev { left: 16px; }
+.banner-arrow--next { right: 16px; }
+.banner-dots {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+}
+.banner-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+.banner-dot.is-active { background: #fff; }
+
+/* Service icons */
+.services {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.service-icon {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 13px;
+  color: var(--text-dim);
+  transition: box-shadow 0.15s ease, transform 0.15s ease, color 0.15s ease;
+}
+.service-icon:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+  color: var(--text);
+}
+
+/* Steam topup */
+.topup {
+  max-width: 1100px;
+  margin: 0 auto 20px;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.topup h2 { margin: 0 0 14px; font-size: 16px; }
+.topup-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.topup-row input {
+  flex: 1;
+  min-width: 180px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 14px;
+}
+.currency-switch { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.currency-option {
+  border: none;
+  background: var(--surface);
+  padding: 10px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--text-dim);
+}
+.currency-option.is-active { background: var(--text); color: #fff; }
+.topup-amount { font-weight: 600; }
+.btn-primary {
+  background: var(--text);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.btn-primary:hover { opacity: 0.85; }
+
+/* Product grid */
+main { max-width: 1100px; margin: 0 auto; padding: 0 20px 60px; }
+.products h2 { font-size: 16px; margin-bottom: 14px; }
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+.product-grid-loading { color: var(--text-dim); font-size: 14px; }
+
+.product-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+.product-card:hover {
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+  transform: translateY(-3px);
+}
+.product-card-thumb {
+  height: 90px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #232733, #3a4152);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #cbd2e0;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.product-card-name { font-size: 13px; font-weight: 500; min-height: 34px; }
+.product-card-price { font-weight: 700; font-size: 15px; }
+.product-card .btn-primary { width: 100%; text-align: center; }
+
+@media (max-width: 640px) {
+  .header-inner { flex-wrap: wrap; }
+  .banner { height: 160px; }
+}
