@@ -104,7 +104,175 @@ function initBannerCarousel() {
   resetTimer();
 }
 
+// --- Флоу покупки: "Купить" -> заказ -> "Оплатить" (успех/неуспех, эмуляция
+// вебхука) -> поллинг статуса до финального состояния (delivered/
+// out_of_stock/delivery_failed/payment_failed). Модалка переиспользуется —
+// каждый шаг просто перерисовывает её содержимое.
+
+const STATUS_LABEL = {
+  created: 'Заказ создан, ожидает оплаты',
+  paid: 'Оплата получена, идёт выдача ключа…',
+  delivering: 'Идёт выдача ключа…',
+  delivered: 'Готово! Ключ выдан',
+  out_of_stock: 'Ключа нет в наличии',
+  delivery_failed: 'Не удалось выдать ключ',
+  payment_failed: 'Оплата не прошла',
+};
+
+const FINAL_STATUSES = new Set(['delivered', 'out_of_stock', 'delivery_failed', 'payment_failed']);
+
+let pollTimer = null;
+
+// Без crypto.randomUUID(): на VDS без TLS страница отдаётся по http, а
+// randomUUID() требует secure context (https/localhost) — сломалось бы
+// именно на демо-сервере. Уникальности "смотри событие на глаз" достаточно,
+// криптостойкость тут не нужна (это же не сам механизм идемпотентности,
+// а просто генератор event_id для кнопки-эмулятора).
+function randomId(prefix) {
+  return `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function stopPolling() {
+  clearTimeout(pollTimer);
+  pollTimer = null;
+}
+
+function openOrderModal() {
+  document.getElementById('orderModalOverlay').hidden = false;
+}
+
+function closeOrderModal() {
+  stopPolling();
+  document.getElementById('orderModalOverlay').hidden = true;
+}
+
+function renderModal(html) {
+  document.getElementById('orderModalContent').innerHTML = html;
+}
+
+function renderLoading(text) {
+  renderModal(`<p class="order-status-label">${text}</p>`);
+}
+
+function renderOrder(order) {
+  const label = STATUS_LABEL[order.status] || order.status;
+  const idLine = `<p class="order-status-id">Заказ ${order.id}</p>`;
+
+  if (order.status === 'created') {
+    renderModal(`
+      <p class="order-status-label">${label}</p>
+      ${idLine}
+      <div class="order-actions">
+        <button class="btn-primary" id="paySuccessBtn">Оплатить (успех)</button>
+        <button class="btn-secondary" id="payFailBtn">Оплатить (неуспех)</button>
+      </div>
+    `);
+    document.getElementById('paySuccessBtn').addEventListener('click', () => payOrder(order.id, 'paid'));
+    document.getElementById('payFailBtn').addEventListener('click', () => payOrder(order.id, 'failed'));
+    return;
+  }
+
+  if (order.status === 'delivered') {
+    renderModal(`
+      <p class="order-status-label">${label}</p>
+      ${idLine}
+      <div class="order-key">${order.issued_code}</div>
+    `);
+    return;
+  }
+
+  if (order.status === 'out_of_stock' || order.status === 'delivery_failed' || order.status === 'payment_failed') {
+    renderModal(`
+      <p class="order-status-label">${label}</p>
+      ${idLine}
+      <p class="order-error">Попробуйте оформить заказ заново.</p>
+    `);
+    return;
+  }
+
+  // paid / delivering — промежуточные, ждём финализации поллингом.
+  renderModal(`<p class="order-status-label">${label}</p>${idLine}`);
+}
+
+async function pollOrder(orderId, attemptsLeft) {
+  let order;
+  try {
+    const res = await fetch(`/orders/${orderId}`);
+    order = await res.json();
+  } catch (err) {
+    console.error(err);
+    return;
+  }
+
+  renderOrder(order);
+  if (FINAL_STATUSES.has(order.status)) return;
+
+  if (attemptsLeft <= 0) {
+    renderModal(`
+      <p class="order-status-label">${STATUS_LABEL[order.status] || order.status}</p>
+      <p class="order-status-id">Заказ ${order.id}</p>
+      <p class="order-waiting">Выдача занимает дольше обычного, статус обновится сам — можно закрыть окно и вернуться позже.</p>
+    `);
+    return;
+  }
+  pollTimer = setTimeout(() => pollOrder(orderId, attemptsLeft - 1), 400);
+}
+
+async function payOrder(orderId, status) {
+  renderModal(`<p class="order-status-label">Отправляем вебхук оплаты…</p><p class="order-status-id">Заказ ${orderId}</p>`);
+  try {
+    await fetch('/webhook/payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event_id: randomId('evt'), order_id: orderId, status }),
+    });
+  } catch (err) {
+    console.error(err);
+    renderModal(`<p class="order-error">Не удалось отправить вебхук — проверьте, что сервер запущен.</p>`);
+    return;
+  }
+  pollOrder(orderId, 20); // до ~8с (20 * 400мс) — с запасом на таймаут-ретрай поставщика
+}
+
+async function buyProduct(sku) {
+  openOrderModal();
+  renderLoading('Создаём заказ…');
+  try {
+    const res = await fetch('/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sku }),
+    });
+    const order = await res.json();
+    if (!res.ok) {
+      renderModal(`<p class="order-error">${order.error || 'Не удалось создать заказ'}</p>`);
+      return;
+    }
+    renderOrder(order);
+  } catch (err) {
+    console.error(err);
+    renderModal(`<p class="order-error">Не удалось создать заказ — проверьте, что сервер запущен.</p>`);
+  }
+}
+
+function initPurchaseFlow() {
+  document.getElementById('productGrid').addEventListener('click', (e) => {
+    const btn = e.target.closest('.buy-btn');
+    if (!btn) return;
+    buyProduct(btn.dataset.sku);
+  });
+
+  document.getElementById('orderModalClose').addEventListener('click', closeOrderModal);
+  document.getElementById('orderModalOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'orderModalOverlay') closeOrderModal();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !document.getElementById('orderModalOverlay').hidden) closeOrderModal();
+  });
+}
+
 loadProducts();
 initCatalogMenu();
 initCurrencySwitch();
 initBannerCarousel();
+initPurchaseFlow();
