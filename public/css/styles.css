@@ -473,6 +473,36 @@ body {
 .btn-primary:hover { opacity: 0.85; }
 .topup-row .btn-primary { height: 56px; padding: 0 20px; }
 
+/* Info banner — предупреждение ревьюеру, что рабочая выдача есть
+   только у одного товара. Закрывается по крестику до следующей полной
+   перезагрузки страницы — состояние живёт только в DOM, ничего не
+   сохраняется в localStorage/sessionStorage, поэтому "до следующей
+   перезагрузки" получается само по себе, без отдельного кода. */
+.info-banner {
+  margin: 20px 0 0;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1e40af;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.info-banner-icon { flex-shrink: 0; font-size: 16px; line-height: 1.4; }
+.info-banner-text { flex: 1; margin: 0; font-size: 13px; line-height: 1.5; }
+.info-banner-close {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  font-size: 18px;
+  line-height: 1;
+  color: #1e40af;
+  opacity: 0.6;
+  cursor: pointer;
+}
+.info-banner-close:hover { opacity: 1; }
+
 /* Product grid */
 main { max-width: 1100px; margin: 0 auto; padding: 0 20px 60px; }
 .products h2 { font-size: 16px; margin-bottom: 14px; }

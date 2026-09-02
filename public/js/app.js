@@ -338,6 +338,12 @@ function initHistoryPanel() {
   });
 }
 
+function initInfoBanner() {
+  const banner = document.getElementById('cs2InfoBanner');
+  const closeBtn = document.getElementById('cs2InfoBannerClose');
+  closeBtn.addEventListener('click', () => banner.remove());
+}
+
 function initPurchaseFlow() {
   document.getElementById('productGrid').addEventListener('click', (e) => {
     const btn = e.target.closest('.buy-btn');
@@ -360,3 +366,4 @@ initCurrencySwitch();
 initBannerCarousel();
 initPurchaseFlow();
 initHistoryPanel();
+initInfoBanner();
