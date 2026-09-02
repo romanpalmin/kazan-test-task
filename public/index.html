@@ -39,47 +39,49 @@
     <div class="banner-dots" id="bannerDots"></div>
   </section>
 
-  <section class="services">
-    <div class="service-icon"><span class="service-badge" style="background:linear-gradient(160deg,#0f2a3d,#1b4a63)">🎮</span>Steam</div>
-    <div class="service-icon"><span class="service-badge" style="background:#3AA9F2">✈️</span>Telegram</div>
-    <div class="service-icon"><span class="service-badge" style="background:linear-gradient(160deg,#4b6bff,#7a3bff)">◆</span>Roblox</div>
-    <div class="service-icon"><span class="service-badge" style="background:#15141c">💀</span>Brawl Stars</div>
-    <div class="service-icon"><span class="service-badge service-badge--photo" style="background:#fff">🪖</span><b>PUBG Mob…</b></div>
-    <div class="service-icon"><span class="service-badge" style="background:linear-gradient(160deg,#4facfe,#7367f0)">A</span>App Store</div>
-    <div class="service-icon"><span class="service-badge" style="background:#10A37F">✦</span>ChatGPT</div>
-    <div class="service-icon"><span class="service-badge" style="background:#003791">🎮</span>PlayStation</div>
-    <div class="service-icon"><span class="service-badge" style="background:#000">♪</span>TikTok</div>
-    <div class="service-icon"><span class="service-badge" style="background:linear-gradient(160deg,#2d5bd7,#7a3bff)">5v5</span>Mobile Leg…</div>
-    <div class="service-icon service-icon--more"><span class="service-badge">🪐</span>ещё 841</div>
-  </section>
-
-  <section class="topup">
-    <div class="topup-header">
-      <span class="topup-icon-badge" style="background:linear-gradient(160deg,#0f2a3d,#1b4a63)">🎮</span>
-      <div class="topup-header-text">
-        <div class="topup-title-row">
-          <h2>Пополнение Steam</h2>
-          <span class="topup-badge">5%</span>
-        </div>
-        <button class="topup-promo">Ввести промокод <span class="chevron">⌄</span></button>
-      </div>
+  <section class="services-panel">
+    <div class="services">
+      <div class="service-icon"><span class="service-badge" style="background:linear-gradient(160deg,#0f2a3d,#1b4a63)">🎮</span><span class="service-label">Steam</span></div>
+      <div class="service-icon"><span class="service-badge" style="background:#3AA9F2">✈️</span><span class="service-label">Telegram</span></div>
+      <div class="service-icon"><span class="service-badge" style="background:linear-gradient(160deg,#4b6bff,#7a3bff)">◆</span><span class="service-label">Roblox</span></div>
+      <div class="service-icon"><span class="service-badge" style="background:#15141c">💀</span><span class="service-label">Brawl Stars</span></div>
+      <div class="service-icon"><span class="service-badge service-badge--photo" style="background:#fff">🪖</span><span class="service-label"><b>PUBG Mob…</b></span></div>
+      <div class="service-icon"><span class="service-badge" style="background:linear-gradient(160deg,#4facfe,#7367f0)">A</span><span class="service-label">App Store</span></div>
+      <div class="service-icon"><span class="service-badge" style="background:#10A37F">✦</span><span class="service-label">ChatGPT</span></div>
+      <div class="service-icon"><span class="service-badge" style="background:#003791">🎮</span><span class="service-label">PlayStation</span></div>
+      <div class="service-icon"><span class="service-badge" style="background:#000">♪</span><span class="service-label">TikTok</span></div>
+      <div class="service-icon"><span class="service-badge" style="background:linear-gradient(160deg,#2d5bd7,#7a3bff)">5v5</span><span class="service-label">Mobile Leg…</span></div>
+      <div class="service-icon service-icon--more"><span class="service-badge">🪐</span><span class="service-label">ещё 841</span></div>
     </div>
-    <div class="topup-row">
-      <div class="topup-field">
-        <span class="topup-field-icon">👤</span>
-        <input type="text" placeholder="Логин Steam" />
-        <span class="topup-field-info">ⓘ</span>
+
+    <div class="topup">
+      <div class="topup-row">
+        <div class="topup-header">
+          <span class="topup-icon-badge" style="background:linear-gradient(160deg,#0f2a3d,#1b4a63)">🎮</span>
+          <div class="topup-header-text">
+            <div class="topup-title-row">
+              <h2>Пополнение Steam</h2>
+              <span class="topup-badge">5%</span>
+            </div>
+            <button class="topup-promo">Ввести промокод <span class="chevron"></span></button>
+          </div>
+        </div>
+        <div class="topup-field">
+          <span class="topup-field-icon">👤</span>
+          <input type="text" placeholder="Логин Steam" />
+          <span class="topup-field-info">ⓘ</span>
+        </div>
+        <div class="topup-amount-box">
+          <span class="topup-amount-label">🪙 Сумма</span>
+          <span class="topup-amount-value">500 ₽</span>
+        </div>
+        <div class="currency-switch" id="currencySwitch">
+          <button class="currency-option is-active" data-currency="RUB">₽</button>
+          <button class="currency-option" data-currency="USD">$</button>
+          <button class="currency-option" data-currency="KZT">₸</button>
+        </div>
+        <button class="btn-primary">Оплатить 500 ₽</button>
       </div>
-      <div class="topup-amount-box">
-        <span class="topup-amount-label">🪙 Сумма</span>
-        <span class="topup-amount-value">500 ₽</span>
-      </div>
-      <div class="currency-switch" id="currencySwitch">
-        <button class="currency-option is-active" data-currency="RUB">₽</button>
-        <button class="currency-option" data-currency="USD">$</button>
-        <button class="currency-option" data-currency="KZT">₸</button>
-      </div>
-      <button class="btn-primary">Оплатить 500 ₽</button>
     </div>
   </section>
 
