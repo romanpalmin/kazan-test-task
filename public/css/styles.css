@@ -486,10 +486,23 @@ body {
   background: #eff6ff;
   color: #1e40af;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
 }
-.info-banner-icon { flex-shrink: 0; font-size: 16px; line-height: 1.4; }
+.info-banner-icon {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #bfdbfe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  font-style: italic;
+  font-family: Georgia, "Times New Roman", serif;
+}
 .info-banner-text { flex: 1; margin: 0; font-size: 13px; line-height: 1.5; }
 .info-banner-close {
   flex-shrink: 0;
