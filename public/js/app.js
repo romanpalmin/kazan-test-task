@@ -201,11 +201,29 @@ function renderOrder(order) {
     return;
   }
 
-  if (order.status === 'out_of_stock' || order.status === 'delivery_failed' || order.status === 'payment_failed') {
+  // payment_failed: оплата не прошла, заказ ничего не должен покупателю —
+  // повторная попытка (новый заказ) действительно решает проблему.
+  if (order.status === 'payment_failed') {
     renderModal(`
       <p class="order-status-label">${label}</p>
       ${idLine}
       <p class="order-error">Попробуйте оформить заказ заново.</p>
+    `);
+    return;
+  }
+
+  // out_of_stock/delivery_failed наступают ТОЛЬКО после paid (см. state
+  // machine) — оплата уже прошла. Совет "оформите заново" здесь означал бы
+  // предложить заплатить второй раз за тот же товар, пока первый платёж
+  // просто зависает без выдачи — честная дыра, которую Этап 3 (админ,
+  // /admin.html) чинит для ЭТОГО ЖЕ заказа, не через новый. Текст ниже не
+  // обещает автоматики (её и нет — уведомлений покупателю не построено),
+  // просто не вводит в заблуждение.
+  if (order.status === 'out_of_stock' || order.status === 'delivery_failed') {
+    renderModal(`
+      <p class="order-status-label">${label}</p>
+      ${idLine}
+      <p class="order-error">Оплата прошла, деньги не потеряны — выдача ключа по этому заказу обрабатывается вручную, повторно оформлять и оплачивать не нужно.</p>
     `);
     return;
   }
