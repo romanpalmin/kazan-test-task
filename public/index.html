@@ -14,7 +14,7 @@
   <header class="site-header">
     <div class="header-inner">
       <button class="catalog-toggle" id="catalogToggle" aria-expanded="false">
-        <span class="burger"></span> Каталог
+        <span class="catalog-grid-icon"><span></span><span></span><span></span><span></span></span> Каталог
       </button>
       <div class="catalog-menu" id="catalogMenu" hidden>
         <div class="catalog-sidebar">
@@ -79,7 +79,9 @@
         </div>
       </div>
       <div class="search">
-        <input type="text" placeholder="Поиск по каталогу..." />
+        <input type="text" placeholder="Игра, приложение или услуга..." />
+        <button class="search-fav" aria-label="Избранное">♡</button>
+        <button class="search-submit" aria-label="Поиск">🔍</button>
       </div>
       <div class="header-icons" aria-hidden="true">👤</div>
     </div>
@@ -134,8 +136,11 @@
         </div>
         <div class="topup-amount-group">
           <div class="topup-amount-box">
-            <span class="topup-amount-label">🪙 Сумма</span>
-            <span class="topup-amount-value">500 ₽</span>
+            <span class="topup-amount-icon">₽</span>
+            <div class="topup-amount-text">
+              <span class="topup-amount-label">Сумма</span>
+              <span class="topup-amount-value">500₽</span>
+            </div>
           </div>
           <div class="currency-switch" id="currencySwitch">
             <button class="currency-option is-active" data-currency="RUB">₽</button>

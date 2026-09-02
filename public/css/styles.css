@@ -10,6 +10,14 @@
   --radius: 10px;
 }
 
+html {
+  /* Держит место под скроллбар всегда, даже когда он скрыт
+     (document.body.style.overflow = 'hidden' у полноэкранного меню) —
+     без этого контент при открытии/закрытии меню сдвигается вбок на
+     ширину скроллбара, скачок вёрстки. */
+  scrollbar-gutter: stable;
+}
+
 * { box-sizing: border-box; }
 
 body {
@@ -19,10 +27,11 @@ body {
   color: var(--text);
 }
 
-/* Header */
+/* Header — светлый фон страницы, тёмные элементы плавают на нём по
+   отдельности (кнопка каталога, поиск), не единая тёмная плашка. */
 .site-header {
-  background: var(--header-bg);
-  color: #fff;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
   position: relative;
 }
 .header-inner {
@@ -34,35 +43,27 @@ body {
   gap: 16px;
 }
 .catalog-toggle {
-  background: #24272f;
+  background: var(--text);
   color: #fff;
   border: none;
-  border-radius: 8px;
-  padding: 10px 16px;
+  border-radius: 14px;
+  height: 52px;
+  padding: 0 18px;
   font-size: 14px;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
-.catalog-toggle:hover { background: #2e323c; }
-.burger {
-  width: 16px;
-  height: 2px;
-  background: #fff;
-  position: relative;
+.catalog-toggle:hover { opacity: 0.85; }
+.catalog-grid-icon {
+  display: grid;
+  grid-template-columns: repeat(2, 5px);
+  grid-template-rows: repeat(2, 5px);
+  gap: 3px;
 }
-.burger::before,
-.burger::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  width: 16px;
-  height: 2px;
-  background: #fff;
-}
-.burger::before { top: -5px; }
-.burger::after { top: 5px; }
+.catalog-grid-icon span { background: #fff; border-radius: 1px; }
 
 /* Каталог — полноэкранная панель под шапкой, top выставляется в JS по
    реальной высоте шапки (не хардкод — шапка не имеет фиксированной
@@ -132,19 +133,68 @@ body {
 .catalog-picks { display: flex; flex-direction: column; gap: 12px; }
 .catalog-picks-links { display: flex; flex-direction: column; gap: 10px; }
 
-.search { flex: 1; }
-.search input {
-  width: 100%;
-  padding: 10px 14px;
-  border-radius: 8px;
-  border: none;
-  background: #24272f;
-  color: #fff;
-  font-size: 14px;
+/* Единый flex-контейнер с overflow:hidden — форма пилюли задаётся
+   один раз на родителе, дети (инпут/сердечко/кнопка) просто
+   заполняют высоту и обрезаются по общему контуру. Раньше кнопка
+   поиска была отдельным абсолютно спозиционированным элементом со
+   своим border-radius — на стыке с рамкой инпута оставался разрыв
+   контура, выглядело как два наложенных друг на друга овала, а не
+   единая форма. */
+.search {
+  display: flex;
+  align-items: stretch;
+  width: 640px;
+  max-width: 100%;
+  height: 52px;
+  border: 2px solid #000;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface);
 }
-.search input::placeholder { color: #8a8f99; }
+.search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 0 8px 0 20px;
+  color: var(--text);
+  font-size: 15px;
+}
+.search input::placeholder { color: var(--text-dim); }
+.search-fav {
+  flex-shrink: 0;
+  width: 40px;
+  border: none;
+  background: none;
+  color: #5b5fe0;
+  font-size: 16px;
+  cursor: pointer;
+}
+.search-submit {
+  flex-shrink: 0;
+  width: 52px;
+  border: none;
+  background: #000;
+  color: #fff;
+  font-size: 15px;
+  cursor: pointer;
+}
+.search-submit:hover { opacity: 0.85; }
 
-.header-icons { font-size: 18px; }
+.header-icons {
+  margin-left: auto;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  flex-shrink: 0;
+  background: var(--bg);
+  color: var(--text-dim);
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
 /* Banner */
 .banner {
@@ -365,14 +415,27 @@ body {
 }
 .topup-amount-box {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 2px;
-  padding: 0 12px;
-  min-width: 90px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  min-width: 110px;
 }
-.topup-amount-label { font-size: 11px; color: var(--text-dim); }
-.topup-amount-value { font-size: 14px; font-weight: 600; }
+.topup-amount-icon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--surface);
+  color: #8b93a7;
+  font-weight: 700;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.topup-amount-text { display: flex; flex-direction: column; gap: 2px; }
+.topup-amount-label { font-size: 13px; font-weight: 600; color: #8b93a7; }
+.topup-amount-value { font-size: 20px; font-weight: 800; color: var(--text); line-height: 1; }
 .currency-switch {
   display: flex;
   align-items: center;
@@ -461,7 +524,13 @@ main { max-width: 1100px; margin: 0 auto; padding: 0 20px 60px; }
   text-overflow: ellipsis;
 }
 .product-card-price { padding: 0 14px; display: flex; align-items: baseline; gap: 6px; }
-.price-now { font-weight: 700; font-size: 15px; }
+.price-now {
+  font-family: "Montserrat", -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 20px;
+  color: #4C9A2A;
+}
 .price-old { font-size: 12px; color: var(--text-dim); text-decoration: line-through; }
 .product-card .btn-primary { margin: 0 14px; width: calc(100% - 28px); text-align: center; }
 
