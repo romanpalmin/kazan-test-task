@@ -42,13 +42,19 @@ function currencySymbol(code) {
 function initCatalogMenu() {
   const toggle = document.getElementById('catalogToggle');
   const menu = document.getElementById('catalogMenu');
+  const header = document.querySelector('.site-header');
 
   const open = () => {
+    // top не хардкожен — шапка без фиксированной высоты, меню должно
+    // встать ровно под ней при любой ширине экрана.
+    menu.style.top = `${header.getBoundingClientRect().bottom}px`;
     menu.hidden = false;
+    document.body.style.overflow = 'hidden';
     toggle.setAttribute('aria-expanded', 'true');
   };
   const close = () => {
     menu.hidden = true;
+    document.body.style.overflow = '';
     toggle.setAttribute('aria-expanded', 'false');
   };
 

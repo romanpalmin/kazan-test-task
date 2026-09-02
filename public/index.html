@@ -17,10 +17,66 @@
         <span class="burger"></span> Каталог
       </button>
       <div class="catalog-menu" id="catalogMenu" hidden>
-        <a href="#">Игровые ключи</a>
-        <a href="#">Пополнения Steam</a>
-        <a href="#">Подписки</a>
-        <a href="#">Гифт-карты</a>
+        <div class="catalog-sidebar">
+          <button class="catalog-sidebar-item is-active">Игры и игровые сервисы <span class="chevron-right">›</span></button>
+          <button class="catalog-sidebar-item">Игровые ценности <span class="chevron-right">›</span></button>
+          <button class="catalog-sidebar-item">Мобильные игры <span class="chevron-right">›</span></button>
+          <button class="catalog-sidebar-item">Сервисы и соцсети <span class="chevron-right">›</span></button>
+          <button class="catalog-sidebar-item">Программы <span class="chevron-right">›</span></button>
+        </div>
+        <div class="catalog-main">
+          <div class="catalog-columns">
+            <div class="catalog-column">
+              <div class="catalog-column-title">Steam <span class="chevron-right">›</span></div>
+              <a href="#">Игры и DLC</a>
+              <a href="#">Пополнение баланса</a>
+              <a href="#">Подарочные карты</a>
+              <a href="#">Коллекционные карточки</a>
+              <a href="#">Смена региона</a>
+            </div>
+            <div class="catalog-column">
+              <div class="catalog-column-title">PlayStation <span class="chevron-right">›</span></div>
+              <a href="#">Игры и DLC</a>
+              <a href="#">Пополнение баланса</a>
+              <a href="#">Новые аккаунты</a>
+              <a href="#">PS Plus</a>
+              <a href="#">EA Play</a>
+            </div>
+            <div class="catalog-column">
+              <div class="catalog-column-title">Xbox <span class="chevron-right">›</span></div>
+              <a href="#">Игры и DLC</a>
+              <a href="#">Пополнение баланса</a>
+              <a href="#">Новые аккаунты</a>
+              <a href="#">Xbox Game Pass</a>
+              <a href="#">Услуги</a>
+            </div>
+            <div class="catalog-column">
+              <div class="catalog-column-title">Nintendo <span class="chevron-right">›</span></div>
+              <a href="#">Игры и DLC</a>
+              <a href="#">Подарочные карты</a>
+              <a href="#">Новые аккаунты</a>
+              <a href="#">NS Online</a>
+            </div>
+            <div class="catalog-column">
+              <div class="catalog-column-title">Battle.net <span class="chevron-right">›</span></div>
+              <a href="#">World of Warcraft</a>
+              <a href="#">Подарочные карты</a>
+              <a href="#">Прямое пополнение</a>
+              <a href="#">Новые аккаунты</a>
+              <a href="#">Смена региона</a>
+            </div>
+          </div>
+          <div class="catalog-picks">
+            <div class="catalog-column-title">Подборки <span class="chevron-right">›</span></div>
+            <div class="catalog-picks-links">
+              <a href="#">Скидки 90%</a>
+              <a href="#">Популярные издатели</a>
+              <a href="#">Лучшие серии игр</a>
+              <a href="#">Steam Deck</a>
+              <a href="#">Bundle-наборы</a>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="search">
         <input type="text" placeholder="Поиск по каталогу..." />
