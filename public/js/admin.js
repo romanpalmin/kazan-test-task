@@ -67,6 +67,7 @@ async function loadStuck() {
     tr.innerHTML = `
       <td><code>${row.id}</code></td>
       <td>${row.product_name}</td>
+      <td><code class="sku-fill" data-sku="${row.sku}" title="Подставить в форму пополнения ниже">${row.sku}</code></td>
       <td><span class="status status-${row.status}">${STATUS_LABEL[row.status] || row.status}</span></td>
       <td>${new Date(row.updated_at).toLocaleString('ru-RU')}</td>
       <td><button data-id="${row.id}" class="retry-btn">Повторить</button></td>
@@ -76,6 +77,15 @@ async function loadStuck() {
 
   tbody.querySelectorAll('.retry-btn').forEach((btn) => {
     btn.addEventListener('click', () => retryOrder(btn.dataset.id, btn));
+  });
+
+  // Клик по SKU — не отдельная фича, просто экономит проверяющему
+  // копипаст в форму пополнения прямо под этой таблицей.
+  tbody.querySelectorAll('.sku-fill').forEach((el) => {
+    el.addEventListener('click', () => {
+      document.getElementById('restockSku').value = el.dataset.sku;
+      document.getElementById('restockSku').focus();
+    });
   });
 }
 
