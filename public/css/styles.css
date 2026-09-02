@@ -181,7 +181,7 @@ body {
 .services {
   padding: 20px;
   display: flex;
-  gap: 18px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 .service-icon {
@@ -196,13 +196,22 @@ body {
   text-align: center;
   transition: box-shadow 0.15s ease, transform 0.15s ease, color 0.15s ease;
 }
-.service-label { white-space: nowrap; }
+.service-label {
+  white-space: nowrap;
+  font-family: "Montserrat", -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: -0.01em;
+  color: #363636;
+}
 .service-icon:hover {
   transform: translateY(-2px);
   color: var(--text);
 }
 .service-icon:hover .service-badge { box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18); }
 .service-badge {
+  position: relative;
   width: 54px;
   height: 54px;
   border-radius: 16px;
@@ -224,10 +233,8 @@ body {
 }
 
 /* Steam topup */
-.topup {
-  padding: 20px;
-  border-top: 1px solid var(--border);
-}
+.panel-divider { height: 1px; background: var(--border); margin: 0 20px; }
+.topup { padding: 20px; }
 .topup h2 { margin: 0; font-size: 15px; }
 .topup-header {
   display: flex;
@@ -249,8 +256,8 @@ body {
 .topup-header-text { display: flex; flex-direction: column; gap: 8px; }
 .topup-title-row { display: flex; align-items: center; gap: 8px; }
 .topup-badge {
-  background: #dcfce7;
-  color: var(--accent);
+  background: var(--accent);
+  color: #fff;
   font-size: 12px;
   font-weight: 700;
   padding: 3px 8px;
@@ -287,10 +294,11 @@ body {
 .topup-field {
   flex: 1;
   min-width: 180px;
+  height: 56px;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 0 12px;
   border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--bg);
@@ -305,24 +313,43 @@ body {
   font-size: 14px;
   min-width: 0;
 }
-.topup-amount-box {
+.topup-amount-group {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 6px 12px;
+  align-items: stretch;
+  height: 56px;
   border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--bg);
+  overflow: hidden;
+}
+.topup-amount-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 0 12px;
   min-width: 90px;
 }
 .topup-amount-label { font-size: 11px; color: var(--text-dim); }
 .topup-amount-value { font-size: 14px; font-weight: 600; }
-.currency-switch { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.currency-switch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border-left: 1px solid var(--border);
+}
 .currency-option {
   border: none;
-  background: var(--surface);
-  padding: 10px 14px;
+  background: #e7e9ee;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 14px;
+  font-weight: 700;
   cursor: pointer;
   color: var(--text-dim);
 }
@@ -337,6 +364,7 @@ body {
   cursor: pointer;
 }
 .btn-primary:hover { opacity: 0.85; }
+.topup-row .btn-primary { height: 56px; padding: 0 20px; }
 
 /* Product grid */
 main { max-width: 1100px; margin: 0 auto; padding: 0 20px 60px; }

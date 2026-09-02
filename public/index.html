@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Kazan Store — цифровые товары для геймеров</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
@@ -54,6 +57,8 @@
       <div class="service-icon service-icon--more"><span class="service-badge">🪐</span><span class="service-label">ещё 841</span></div>
     </div>
 
+    <div class="panel-divider"></div>
+
     <div class="topup">
       <div class="topup-row">
         <div class="topup-header">
@@ -71,14 +76,16 @@
           <input type="text" placeholder="Логин Steam" />
           <span class="topup-field-info">ⓘ</span>
         </div>
-        <div class="topup-amount-box">
-          <span class="topup-amount-label">🪙 Сумма</span>
-          <span class="topup-amount-value">500 ₽</span>
-        </div>
-        <div class="currency-switch" id="currencySwitch">
-          <button class="currency-option is-active" data-currency="RUB">₽</button>
-          <button class="currency-option" data-currency="USD">$</button>
-          <button class="currency-option" data-currency="KZT">₸</button>
+        <div class="topup-amount-group">
+          <div class="topup-amount-box">
+            <span class="topup-amount-label">🪙 Сумма</span>
+            <span class="topup-amount-value">500 ₽</span>
+          </div>
+          <div class="currency-switch" id="currencySwitch">
+            <button class="currency-option is-active" data-currency="RUB">₽</button>
+            <button class="currency-option" data-currency="USD">$</button>
+            <button class="currency-option" data-currency="KZT">₸</button>
+          </div>
         </div>
         <button class="btn-primary">Оплатить 500 ₽</button>
       </div>
