@@ -179,9 +179,26 @@ function renderOrder(order) {
   const idLine = `<p class="order-status-id">Заказ ${order.id}</p>`;
 
   if (order.status === 'created') {
+    // Промокод (Этап 4) — поле прямо в модалке покупки, до оплаты.
+    // Один промокод на заказ, без замены (см. promoService.js). Пока
+    // не применён — инпут + кнопка; применён — короткая строка с
+    // суммой скидки, без "Итого": заказ нигде не хранит и не
+    // показывает цену товара, добавлять её сюда ради одной строки
+    // избыточно (решение Романа).
+    const promoBlock = order.promo_code
+      ? `<div class="order-promo-applied">Промокод <strong>${order.promo_code}</strong> применён: −${order.discount_amount} ₽</div>`
+      : `
+        <div class="order-promo">
+          <input type="text" id="promoInput" placeholder="Промокод">
+          <button class="btn-secondary" id="promoApplyBtn">Применить</button>
+        </div>
+        <p class="order-error" id="promoError" hidden></p>
+      `;
+
     renderModal(`
       <p class="order-status-label">${label}</p>
       ${idLine}
+      ${promoBlock}
       <div class="order-actions">
         <button class="btn-primary" id="paySuccessBtn">Оплатить (успех)</button>
         <button class="btn-secondary" id="payFailBtn">Оплатить (неуспех)</button>
@@ -189,6 +206,14 @@ function renderOrder(order) {
     `);
     document.getElementById('paySuccessBtn').addEventListener('click', () => payOrder(order.id, 'paid'));
     document.getElementById('payFailBtn').addEventListener('click', () => payOrder(order.id, 'failed'));
+
+    if (!order.promo_code) {
+      const promoInput = document.getElementById('promoInput');
+      document.getElementById('promoApplyBtn').addEventListener('click', () => applyPromo(order.id));
+      promoInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') applyPromo(order.id);
+      });
+    }
     return;
   }
 
@@ -254,6 +279,43 @@ async function pollOrder(orderId, attemptsLeft) {
     return;
   }
   pollTimer = setTimeout(() => pollOrder(orderId, attemptsLeft - 1), 400);
+}
+
+// Применить промокод, не закрывая модалку целиком — в отличие от
+// payOrder, сетевая/валидационная ошибка здесь не фатальна для формы,
+// просто показываем текст в .order-error и даём попробовать другой код.
+async function applyPromo(orderId) {
+  const input = document.getElementById('promoInput');
+  const errorEl = document.getElementById('promoError');
+  const btn = document.getElementById('promoApplyBtn');
+  const code = input.value.trim();
+  if (!code) return;
+
+  errorEl.hidden = true;
+  btn.disabled = true;
+  try {
+    const res = await fetch(`/orders/${orderId}/promo`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      errorEl.textContent = result.error || 'Не удалось применить промокод';
+      errorEl.hidden = false;
+      btn.disabled = false;
+      return;
+    }
+    // Перечитываем заказ — promo_code/discount_amount теперь на нём,
+    // renderOrder сам покажет применённое состояние.
+    const order = await (await fetch(`/orders/${orderId}`)).json();
+    renderOrder(order);
+  } catch (err) {
+    console.error(err);
+    errorEl.textContent = 'Не удалось применить промокод — проверьте, что сервер запущен.';
+    errorEl.hidden = false;
+    btn.disabled = false;
+  }
 }
 
 async function payOrder(orderId, status) {

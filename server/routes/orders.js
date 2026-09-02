@@ -1,5 +1,6 @@
 const express = require('express');
 const { createOrder, findOrder, listOrders } = require('../services/orderService');
+const { applyPromo } = require('../services/promoService');
 
 const router = express.Router();
 
@@ -29,6 +30,21 @@ router.get('/:id', (req, res) => {
   const order = findOrder(req.params.id);
   if (!order) return res.status(404).json({ error: 'Заказ не найден' });
   res.json(order);
+});
+
+// Применить промокод (Этап 4) — поле в модалке покупки, до оплаты
+// (заказ должен быть в статусе 'created', см. promoService.js).
+router.post('/:id/promo', (req, res) => {
+  const { code } = req.body || {};
+  if (typeof code !== 'string' || !code.trim()) {
+    return res.status(400).json({ error: 'code обязателен' });
+  }
+  try {
+    const result = applyPromo(req.params.id, code.trim().toUpperCase());
+    res.json(result);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
 });
 
 module.exports = router;

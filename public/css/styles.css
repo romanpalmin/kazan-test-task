@@ -643,6 +643,25 @@ main { max-width: 1100px; margin: 0 auto; padding: 0 20px 60px; }
 .order-error { color: #b91c1c; font-size: 14px; margin: 0 0 4px; }
 .order-waiting { color: var(--text-dim); font-size: 14px; margin: 0 0 4px; }
 
+/* Промокод (Этап 4) — поле в модалке покупки, до оплаты. */
+.order-promo { display: flex; gap: 8px; margin: 0 0 10px; }
+.order-promo input {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 14px;
+}
+.order-promo-applied {
+  background: var(--bg);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  margin: 0 0 14px;
+}
+.order-promo-applied strong { color: var(--accent); }
+
 /* Попап "История заказов" — переиспользует .order-modal-overlay/.order-modal,
    только шире и со скроллящимся списком внутри. */
 .order-modal--wide { width: 640px; }

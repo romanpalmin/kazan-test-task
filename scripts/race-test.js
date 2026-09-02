@@ -2,9 +2,10 @@
 'use strict';
 
 // Способ воспроизвести проверку гонок (задание, "Приложите способ
-// воспроизвести скрипт/тест с параллельными запросами"). Сам поднимает
-// сервер на отдельном порту, сбрасывает БД в чистое состояние, гоняет
-// три сценария и проверяет результат прямым чтением SQLite-файла — не
+// воспроизвести скрипт/тест с параллельными запросами" — Этап 2 — и
+// "применён не более N раз" — Этап 4). Сам поднимает сервер на
+// отдельном порту, сбрасывает БД в чистое состояние, гоняет несколько
+// сценариев и проверяет результат прямым чтением SQLite-файла — не
 // нужно вручную поднимать сервер в соседнем терминале.
 //
 // Запуск: npm run test:race
@@ -63,6 +64,15 @@ async function sendWebhook(eventId, orderId, status = 'paid') {
   return r.json();
 }
 
+async function applyPromo(orderId, code) {
+  const r = await fetch(`${BASE_URL}/orders/${orderId}/promo`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code }),
+  });
+  return { status: r.status, body: await r.json() };
+}
+
 async function waitForServer(retries = 50) {
   for (let i = 0; i < retries; i++) {
     try {
@@ -109,6 +119,32 @@ async function scenarioDifferentEventIds(db) {
   check('ровно 1 ключ привязан к заказу (спасает CAS статуса, не дедуп по event_id)', keysClaimed === 1, `получено ${keysClaimed}`);
   check('заказ доставлен (delivered)', final.status === 'delivered', `статус: ${final.status}`);
   check('все 50 разных событий записаны как обработанные', eventsRecorded === 50, `получено ${eventsRecorded}`);
+}
+
+async function scenarioPromoLimit(db) {
+  console.log('\nСценарий 4 — промокод с лимитом 3 (LIMIT3), 10 параллельных заказов пытаются его применить');
+  const orders = await Promise.all(Array.from({ length: 10 }, () => createOrder()));
+  const results = await Promise.all(orders.map((o) => applyPromo(o.id, 'LIMIT3')));
+
+  const succeeded = results.filter((r) => r.status === 200).length;
+  const usedCount = db.prepare('SELECT used_count FROM promocodes WHERE code = ?').get('LIMIT3').used_count;
+  const ordersWithPromo = db.prepare("SELECT COUNT(*) c FROM orders WHERE promo_code = 'LIMIT3'").get().c;
+
+  check('ровно 3 из 10 параллельных запросов приняты', succeeded === 3, `получено ${succeeded}`);
+  check('used_count в promocodes равен 3 (не больше, не меньше)', usedCount === 3, `получено ${usedCount}`);
+  check('ровно 3 заказа помечены этим промокодом', ordersWithPromo === 3, `получено ${ordersWithPromo}`);
+}
+
+async function scenarioPromoOnce(db) {
+  console.log('\nСценарий 4b — предельный случай N=1 (ONCEONLY), 5 параллельных заказов');
+  const orders = await Promise.all(Array.from({ length: 5 }, () => createOrder()));
+  const results = await Promise.all(orders.map((o) => applyPromo(o.id, 'ONCEONLY')));
+
+  const succeeded = results.filter((r) => r.status === 200).length;
+  const usedCount = db.prepare('SELECT used_count FROM promocodes WHERE code = ?').get('ONCEONLY').used_count;
+
+  check('ровно 1 из 5 параллельных запросов принят', succeeded === 1, `получено ${succeeded}`);
+  check('used_count в promocodes равен 1', usedCount === 1, `получено ${usedCount}`);
 }
 
 /**
@@ -191,6 +227,8 @@ async function main() {
 
     await scenarioSameEventId(db);
     await scenarioDifferentEventIds(db);
+    await scenarioPromoLimit(db);
+    await scenarioPromoOnce(db);
     db.close();
 
     await scenarioWebhookBeforeOrder();

@@ -8,6 +8,21 @@ CREATE TABLE IF NOT EXISTS products (
   image    TEXT
 );
 
+-- Промокоды (Этап 4) — статика из docs/task-conditions.md, сидируется
+-- при старте, как и products. used_count — счётчик применений; лимит
+-- max_uses держит атомарный UPDATE ... WHERE used_count < max_uses в
+-- promoService.js (тот же класс гварда, что у keys_pool выше — "занять
+-- единицу ограниченного ресурса под нагрузкой без блокировок").
+-- currency намеренно не хранится: весь каталог в RUB, конвертации в
+-- коде нигде нет (см. products.currency — тоже всегда RUB на деле).
+CREATE TABLE IF NOT EXISTS promocodes (
+  code       TEXT PRIMARY KEY,
+  type       TEXT NOT NULL, -- 'percent' | 'amount'
+  value      INTEGER NOT NULL,
+  max_uses   INTEGER NOT NULL,
+  used_count INTEGER NOT NULL DEFAULT 0
+);
+
 -- Заказы — состояние из docs/task-conditions.md "Статусы заказа".
 CREATE TABLE IF NOT EXISTS orders (
   id                TEXT PRIMARY KEY,
@@ -15,6 +30,8 @@ CREATE TABLE IF NOT EXISTS orders (
   status            TEXT NOT NULL DEFAULT 'created',
   issued_code       TEXT,
   issue_request_id  TEXT,
+  promo_code        TEXT REFERENCES promocodes(code), -- Этап 4, см. таблицу promocodes ниже
+  discount_amount   INTEGER NOT NULL DEFAULT 0,
   created_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
   updated_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
