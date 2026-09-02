@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Админка — Этап 3</title>
+<style>
+  /* Дизайн намеренно не проработан — задание прямо говорит "дизайн
+     админки не нужен". Только читаемость и работоспособность. */
+  body { font-family: system-ui, sans-serif; max-width: 900px; margin: 32px auto; padding: 0 16px; color: #222; }
+  h1 { font-size: 20px; }
+  h2 { font-size: 16px; margin-top: 32px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #ddd; font-size: 13px; }
+  th { background: #f4f4f4; }
+  code { font-family: monospace; font-size: 12px; }
+  button { cursor: pointer; padding: 4px 10px; }
+  .status { padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+  .status-out_of_stock { background: #ffe3b3; }
+  .status-delivery_failed { background: #ffc9c9; }
+  .status-delivered { background: #c9f7c9; }
+  .token-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; }
+  .token-bar input { flex: 1; padding: 4px 8px; }
+  .restock-form { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+  .restock-form input { padding: 4px 8px; }
+  .empty { color: #888; font-style: italic; }
+  .error { color: #c00; }
+</style>
+</head>
+<body>
+  <h1>Админка (Этап 3) — восстановление после сбоя</h1>
+  <p>Не часть витрины, ссылок отсюда на неё нет — прямой URL <code>/admin.html</code>, по заданию дизайн не требуется.</p>
+
+  <div class="token-bar">
+    <label for="tokenInput">X-Admin-Token:</label>
+    <input id="tokenInput" type="text" placeholder="kazan-admin-dev">
+    <button id="tokenSave">Сохранить</button>
+  </div>
+  <p id="authError" class="error" hidden></p>
+
+  <h2>Остатки по товарам</h2>
+  <table id="stockTable">
+    <thead><tr><th>SKU</th><th>Доступно ключей</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <div class="restock-form">
+    <input id="restockSku" type="text" placeholder="sku, например KEY-CS2-PRIME" size="24">
+    <input id="restockCount" type="number" min="1" max="1000" value="10" size="4">
+    <button id="restockBtn">Пополнить</button>
+    <span id="restockResult"></span>
+  </div>
+
+  <h2>Оплачен, но не выдан <button id="refreshBtn">Обновить</button></h2>
+  <table id="stuckTable">
+    <thead><tr><th>Заказ</th><th>Товар</th><th>Статус</th><th>Обновлён</th><th></th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <p id="stuckEmpty" class="empty" hidden>Застрявших заказов нет.</p>
+
+  <script src="/js/admin.js"></script>
+</body>
+</html>
