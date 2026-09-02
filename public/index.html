@@ -32,33 +32,54 @@
       <div class="banner-slide">Новые ключи CS2 Prime уже в продаже</div>
       <div class="banner-slide">Gift-карты PSN/Xbox — мгновенная доставка</div>
     </div>
-    <button class="banner-arrow banner-arrow--prev" id="bannerPrev" aria-label="Предыдущий слайд">‹</button>
-    <button class="banner-arrow banner-arrow--next" id="bannerNext" aria-label="Следующий слайд">›</button>
+    <div class="banner-arrows">
+      <button class="banner-arrow" id="bannerPrev" aria-label="Предыдущий слайд">←</button>
+      <button class="banner-arrow" id="bannerNext" aria-label="Следующий слайд">→</button>
+    </div>
     <div class="banner-dots" id="bannerDots"></div>
   </section>
 
   <section class="services">
-    <div class="service-icon">Steam</div>
-    <div class="service-icon">Telegram</div>
-    <div class="service-icon">Roblox</div>
-    <div class="service-icon">PUBG Mobile</div>
-    <div class="service-icon">App Store</div>
-    <div class="service-icon">ChatGPT</div>
-    <div class="service-icon">PlayStation</div>
-    <div class="service-icon">TikTok</div>
+    <div class="service-icon"><span class="service-badge" style="background:linear-gradient(160deg,#0f2a3d,#1b4a63)">🎮</span>Steam</div>
+    <div class="service-icon"><span class="service-badge" style="background:#3AA9F2">✈️</span>Telegram</div>
+    <div class="service-icon"><span class="service-badge" style="background:linear-gradient(160deg,#4b6bff,#7a3bff)">◆</span>Roblox</div>
+    <div class="service-icon"><span class="service-badge" style="background:#15141c">💀</span>Brawl Stars</div>
+    <div class="service-icon"><span class="service-badge service-badge--photo" style="background:#fff">🪖</span><b>PUBG Mob…</b></div>
+    <div class="service-icon"><span class="service-badge" style="background:linear-gradient(160deg,#4facfe,#7367f0)">A</span>App Store</div>
+    <div class="service-icon"><span class="service-badge" style="background:#10A37F">✦</span>ChatGPT</div>
+    <div class="service-icon"><span class="service-badge" style="background:#003791">🎮</span>PlayStation</div>
+    <div class="service-icon"><span class="service-badge" style="background:#000">♪</span>TikTok</div>
+    <div class="service-icon"><span class="service-badge" style="background:linear-gradient(160deg,#2d5bd7,#7a3bff)">5v5</span>Mobile Leg…</div>
+    <div class="service-icon service-icon--more"><span class="service-badge">🪐</span>ещё 841</div>
   </section>
 
   <section class="topup">
-    <h2>Пополнение Steam</h2>
+    <div class="topup-header">
+      <span class="topup-icon-badge" style="background:linear-gradient(160deg,#0f2a3d,#1b4a63)">🎮</span>
+      <div class="topup-header-text">
+        <div class="topup-title-row">
+          <h2>Пополнение Steam</h2>
+          <span class="topup-badge">5%</span>
+        </div>
+        <button class="topup-promo">Ввести промокод <span class="chevron">⌄</span></button>
+      </div>
+    </div>
     <div class="topup-row">
-      <input type="text" placeholder="Логин Steam" />
+      <div class="topup-field">
+        <span class="topup-field-icon">👤</span>
+        <input type="text" placeholder="Логин Steam" />
+        <span class="topup-field-info">ⓘ</span>
+      </div>
+      <div class="topup-amount-box">
+        <span class="topup-amount-label">🪙 Сумма</span>
+        <span class="topup-amount-value">500 ₽</span>
+      </div>
       <div class="currency-switch" id="currencySwitch">
         <button class="currency-option is-active" data-currency="RUB">₽</button>
         <button class="currency-option" data-currency="USD">$</button>
         <button class="currency-option" data-currency="KZT">₸</button>
       </div>
-      <span class="topup-amount">500 ₽</span>
-      <button class="btn-primary">Оплатить</button>
+      <button class="btn-primary">Оплатить 500 ₽</button>
     </div>
   </section>
 

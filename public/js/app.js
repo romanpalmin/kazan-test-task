@@ -10,12 +10,26 @@ async function loadProducts() {
   }
 }
 
+const TYPE_ICON = { key: '🔑', topup: '💳', subscription: '⭐', giftcard: '🎁' };
+
 function productCardHtml(product) {
+  const icon = TYPE_ICON[product.type] || '🎮';
+  const currency = currencySymbol(product.currency);
+  // Старой цены нет в данных задания — чисто декоративная зачёркнутая
+  // цена (x2 от текущей), как в макете. Решение Романа: задание не
+  // запрещает, свобода в оформлении витрины.
+  const oldPrice = product.price * 2;
   return `
     <article class="product-card" data-sku="${product.sku}">
-      <div class="product-card-thumb">${product.type}</div>
-      <div class="product-card-name">${product.name}</div>
-      <div class="product-card-price">${product.price} ${currencySymbol(product.currency)}</div>
+      <div class="product-card-thumb">
+        <img class="thumb-img" src="${product.image}" alt="" />
+        <span class="thumb-type-badge">${icon}</span>
+      </div>
+      <div class="product-card-meta">${icon} ${product.name}</div>
+      <div class="product-card-price">
+        <span class="price-now">${product.price} ${currency}</span>
+        <span class="price-old">${oldPrice} ${currency}</span>
+      </div>
       <button class="btn-primary buy-btn" data-sku="${product.sku}">Купить</button>
     </article>
   `;
