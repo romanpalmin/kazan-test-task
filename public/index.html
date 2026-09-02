@@ -83,7 +83,7 @@
         <button class="search-fav" aria-label="Избранное">♡</button>
         <button class="search-submit" aria-label="Поиск">🔍</button>
       </div>
-      <div class="header-icons" aria-hidden="true">👤</div>
+      <button class="header-icons" id="historyToggle" aria-label="История заказов">👤</button>
     </div>
   </header>
 
@@ -166,6 +166,14 @@
     <div class="order-modal">
       <button class="order-modal-close" id="orderModalClose" aria-label="Закрыть">×</button>
       <div id="orderModalContent"></div>
+    </div>
+  </div>
+
+  <div class="order-modal-overlay" id="historyModalOverlay" hidden>
+    <div class="order-modal order-modal--wide">
+      <button class="order-modal-close" id="historyModalClose" aria-label="Закрыть">×</button>
+      <h3 class="history-title">История заказов</h3>
+      <div class="history-list" id="historyList"></div>
     </div>
   </div>
 

@@ -1,7 +1,14 @@
 const express = require('express');
-const { createOrder, findOrder } = require('../services/orderService');
+const { createOrder, findOrder, listOrders } = require('../services/orderService');
 
 const router = express.Router();
+
+// Список заказов для попапа "История" (клик по иконке профиля) —
+// покупка/заказ/результат по просьбе заказчика, уточнение вне
+// docs/task-conditions.md.
+router.get('/', (req, res) => {
+  res.json(listOrders());
+});
 
 // Создать заказ. Флоу начинается с кнопки "Купить" на карточке товара.
 router.post('/', (req, res) => {

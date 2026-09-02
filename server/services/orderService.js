@@ -8,6 +8,13 @@ const insertOrder = db.prepare(`
   INSERT INTO orders (id, sku, status) VALUES (?, ?, 'created')
 `);
 const getOrder = db.prepare('SELECT * FROM orders WHERE id = ?');
+const listOrdersStmt = db.prepare(`
+  SELECT orders.*, products.name AS product_name
+  FROM orders
+  JOIN products ON products.sku = orders.sku
+  ORDER BY orders.created_at DESC
+  LIMIT ?
+`);
 
 function createOrder(sku) {
   if (!getProduct.get(sku)) {
@@ -35,4 +42,11 @@ function findOrder(id) {
   return getOrder.get(id);
 }
 
-module.exports = { createOrder, findOrder };
+// Журнал событий для попапа "История" — покупка/заказ/результат в
+// одну строку каждый. 100 достаточно с запасом для тестового задания,
+// не читаем таблицу молча без ограничения.
+function listOrders(limit = 100) {
+  return listOrdersStmt.all(limit);
+}
+
+module.exports = { createOrder, findOrder, listOrders };

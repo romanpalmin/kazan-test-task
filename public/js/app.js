@@ -275,6 +275,69 @@ async function buyProduct(sku) {
   }
 }
 
+// --- Попап "История заказов" (клик по иконке профиля) — уточнение
+// заказчика, не входит в docs/task-conditions.md. Одна строка = один
+// заказ целиком (покупка/заказ/результат), список подтягивается заново
+// при каждом открытии, без отдельной кнопки "Обновить" — так проще и
+// нигде больше в проекте нет live-обновлений без действия пользователя.
+
+function statusVariant(status) {
+  if (status === 'delivered') return 'delivered';
+  if (status === 'out_of_stock' || status === 'delivery_failed' || status === 'payment_failed') return 'failed';
+  return 'pending';
+}
+
+function historyRowHtml(order) {
+  const label = STATUS_LABEL[order.status] || order.status;
+  const time = new Date(order.created_at).toLocaleString('ru-RU');
+  const codeLine = order.status === 'delivered' && order.issued_code
+    ? `<span class="history-row-code">${order.issued_code}</span>`
+    : '';
+  return `
+    <div class="history-row">
+      <div class="history-row-top">
+        <span class="history-row-name">${order.product_name}</span>
+        <span class="history-row-status history-row-status--${statusVariant(order.status)}">${label}</span>
+      </div>
+      <span class="history-row-meta">${order.id} · ${time}</span>
+      ${codeLine}
+    </div>
+  `;
+}
+
+function initHistoryPanel() {
+  const toggle = document.getElementById('historyToggle');
+  const overlay = document.getElementById('historyModalOverlay');
+  const list = document.getElementById('historyList');
+
+  async function open() {
+    overlay.hidden = false;
+    list.innerHTML = '<p class="order-status-label">Загружаем…</p>';
+    try {
+      const res = await fetch('/orders');
+      const orders = await res.json();
+      list.innerHTML = orders.length
+        ? orders.map(historyRowHtml).join('')
+        : '<p class="history-empty">Заказов пока нет.</p>';
+    } catch (err) {
+      console.error(err);
+      list.innerHTML = '<p class="order-error">Не удалось загрузить историю — проверьте, что сервер запущен.</p>';
+    }
+  }
+  function close() {
+    overlay.hidden = true;
+  }
+
+  toggle.addEventListener('click', open);
+  document.getElementById('historyModalClose').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !overlay.hidden) close();
+  });
+}
+
 function initPurchaseFlow() {
   document.getElementById('productGrid').addEventListener('click', (e) => {
     const btn = e.target.closest('.buy-btn');
@@ -296,3 +359,4 @@ initCatalogMenu();
 initCurrencySwitch();
 initBannerCarousel();
 initPurchaseFlow();
+initHistoryPanel();
