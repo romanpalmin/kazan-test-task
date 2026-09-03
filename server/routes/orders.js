@@ -5,7 +5,7 @@ const { applyPromo } = require('../services/promoService');
 const router = express.Router();
 
 // Список заказов для попапа "История" (клик по иконке профиля) —
-// покупка/заказ/результат по просьбе заказчика, уточнение вне
+// покупка/заказ/результат по просьбе постановщика, уточнение вне
 // docs/task-conditions.md.
 router.get('/', (req, res) => {
   res.json(listOrders());
