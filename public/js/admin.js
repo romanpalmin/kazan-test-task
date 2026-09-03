@@ -45,7 +45,7 @@ const STATUS_LABEL = {
 };
 
 async function loadStock() {
-  const rows = await adminFetch('/admin/stock');
+  const rows = await adminFetch('admin/stock');
   const tbody = document.querySelector('#stockTable tbody');
   tbody.innerHTML = '';
   for (const row of rows) {
@@ -56,7 +56,7 @@ async function loadStock() {
 }
 
 async function loadStuck() {
-  const rows = await adminFetch('/admin/orders/stuck');
+  const rows = await adminFetch('admin/orders/stuck');
   const tbody = document.querySelector('#stuckTable tbody');
   const empty = document.getElementById('stuckEmpty');
   tbody.innerHTML = '';
@@ -93,7 +93,7 @@ async function retryOrder(id, btn) {
   btn.disabled = true;
   btn.textContent = '…';
   try {
-    const order = await adminFetch(`/admin/orders/${id}/retry`, { method: 'POST' });
+    const order = await adminFetch(`admin/orders/${id}/retry`, { method: 'POST' });
     // Если пул всё ещё пуст — заказ вернётся в тот же restorable-статус,
     // строка просто останется в списке после перезагрузки. Если ключ
     // нашёлся — заказ пропадёт из "застрявших".
@@ -113,7 +113,7 @@ document.getElementById('restockBtn').addEventListener('click', async () => {
     return;
   }
   try {
-    const result = await adminFetch('/admin/keys/restock', {
+    const result = await adminFetch('admin/keys/restock', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sku, count }),

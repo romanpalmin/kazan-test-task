@@ -1,7 +1,7 @@
 async function loadProducts() {
   const grid = document.getElementById('productGrid');
   try {
-    const res = await fetch('/products');
+    const res = await fetch('products');
     const products = await res.json();
     grid.innerHTML = products.map(productCardHtml).join('');
   } catch (err) {
@@ -260,7 +260,7 @@ function renderOrder(order) {
 async function pollOrder(orderId, attemptsLeft) {
   let order;
   try {
-    const res = await fetch(`/orders/${orderId}`);
+    const res = await fetch(`orders/${orderId}`);
     order = await res.json();
   } catch (err) {
     console.error(err);
@@ -294,7 +294,7 @@ async function applyPromo(orderId) {
   errorEl.hidden = true;
   btn.disabled = true;
   try {
-    const res = await fetch(`/orders/${orderId}/promo`, {
+    const res = await fetch(`orders/${orderId}/promo`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code }),
@@ -308,7 +308,7 @@ async function applyPromo(orderId) {
     }
     // Перечитываем заказ — promo_code/discount_amount теперь на нём,
     // renderOrder сам покажет применённое состояние.
-    const order = await (await fetch(`/orders/${orderId}`)).json();
+    const order = await (await fetch(`orders/${orderId}`)).json();
     renderOrder(order);
   } catch (err) {
     console.error(err);
@@ -321,7 +321,7 @@ async function applyPromo(orderId) {
 async function payOrder(orderId, status) {
   renderModal(`<p class="order-status-label">Отправляем вебхук оплаты…</p><p class="order-status-id">Заказ ${orderId}</p>`);
   try {
-    await fetch('/webhook/payment', {
+    await fetch('webhook/payment', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ event_id: randomId('evt'), order_id: orderId, status }),
@@ -338,7 +338,7 @@ async function buyProduct(sku) {
   openOrderModal();
   renderLoading('Создаём заказ…');
   try {
-    const res = await fetch('/orders', {
+    const res = await fetch('orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sku }),
@@ -394,7 +394,7 @@ function initHistoryPanel() {
     overlay.hidden = false;
     list.innerHTML = '<p class="order-status-label">Загружаем…</p>';
     try {
-      const res = await fetch('/orders');
+      const res = await fetch('orders');
       const orders = await res.json();
       list.innerHTML = orders.length
         ? orders.map(historyRowHtml).join('')
