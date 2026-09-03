@@ -147,6 +147,39 @@ async function scenarioPromoOnce(db) {
   check('used_count в promocodes равен 1', usedCount === 1, `получено ${usedCount}`);
 }
 
+async function scenarioPromoReleaseOnPaymentFailed(db) {
+  console.log('\nСценарий 4c — промокод освобождается при payment_failed, но не при out_of_stock/delivery_failed');
+  const before = db.prepare('SELECT used_count FROM promocodes WHERE code = ?').get('WELCOME10').used_count;
+
+  const orderA = await createOrder();
+  await applyPromo(orderA.id, 'WELCOME10');
+  await sendWebhook('evt_release_a', orderA.id, 'failed');
+  await sleep(100);
+
+  const afterFail = db.prepare('SELECT used_count FROM promocodes WHERE code = ?').get('WELCOME10').used_count;
+  const orderARow = db.prepare('SELECT status, promo_code FROM orders WHERE id = ?').get(orderA.id);
+
+  check('заказ ушёл в payment_failed', orderARow.status === 'payment_failed', `статус: ${orderARow.status}`);
+  check(
+    'promo_code остался на заказе как исторический факт (не стёрт)',
+    orderARow.promo_code === 'WELCOME10'
+  );
+  check(
+    'used_count вернулся к значению ДО применения (слот освобождён)',
+    afterFail === before,
+    `было ${before}, стало ${afterFail}`
+  );
+
+  // Тот же код должен снова успешно примениться другим заказом — слот
+  // реально свободен, а не просто "выглядит как до".
+  const orderB = await createOrder();
+  const reapply = await applyPromo(orderB.id, 'WELCOME10');
+  const afterReapply = db.prepare('SELECT used_count FROM promocodes WHERE code = ?').get('WELCOME10').used_count;
+
+  check('тот же промокод повторно применяется другим заказом', reapply.status === 200, `код ${reapply.status}`);
+  check('used_count после повторного применения снова +1 от before', afterReapply === before + 1, `получено ${afterReapply}`);
+}
+
 /**
  * Сценарий 3 проверяется НЕ через HTTP к поднятому серверу, а прямым
  * вызовом того же кода, который вызывает POST /webhook/payment.
@@ -229,6 +262,7 @@ async function main() {
     await scenarioDifferentEventIds(db);
     await scenarioPromoLimit(db);
     await scenarioPromoOnce(db);
+    await scenarioPromoReleaseOnPaymentFailed(db);
     db.close();
 
     await scenarioWebhookBeforeOrder();
