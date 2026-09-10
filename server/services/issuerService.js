@@ -31,12 +31,22 @@ const claimKey = db.prepare(`
 `);
 const getClaimedCode = db.prepare('SELECT code FROM keys_pool WHERE order_id = ?');
 
-// Атомарно: занять свободный ключ под этот заказ (если ещё не занят) и
-// зафиксировать его в леджере под этим request_id. Один db.transaction —
-// либо всё, либо ничего, даже если бы это была многоконнекшенная СУБД.
+// Этап 2: заказы для type='key' резервируют себе ключ уже в момент
+// создания (orderService.createOrder), не здесь — значит к моменту
+// выдачи ключ обычно УЖЕ занят этим orderId. Сначала проверяем это
+// (getClaimedCode), и только если ничего не нашлось (заказ создан в
+// обход резерва — так делает race-test.js для сценария "вебхук раньше
+// заказа", и так же ведут себя товары без пула ключей, для которых
+// резерв на создании не выполняется) — падаем на старый путь: пробуем
+// захватить свободный ключ прямо сейчас. Без этой проверки повторный
+// вызов (провайдер B после отказа A) захватил бы ЕЩЁ один ключ поверх
+// уже зарезервированного — тихая утечка остатка на ровном месте.
 const claimAndRecord = db.transaction((requestId, sku, orderId, provider) => {
-  claimKey.run(orderId, sku);
-  const row = getClaimedCode.get(orderId);
+  let row = getClaimedCode.get(orderId);
+  if (!row) {
+    claimKey.run(orderId, sku);
+    row = getClaimedCode.get(orderId);
+  }
   if (!row) return null; // пул пуст
   insertLedger.run(requestId, row.code, orderId, provider);
   return row.code;

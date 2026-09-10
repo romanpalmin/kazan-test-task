@@ -34,13 +34,26 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function createOrder() {
+async function createOrder(sku = 'KEY-CS2-PRIME') {
   const r = await fetch(`${BASE_URL}/orders`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sku: 'KEY-CS2-PRIME' }),
+    body: JSON.stringify({ sku }),
   });
   return r.json();
+}
+
+// Как createOrder, но с сохранением статус-кода — нужен сценарию гонки
+// за последнюю единицу ниже: важно не только КТО получил заказ, но и
+// что отказавшие попытки получили именно понятную ошибку (409), а не
+// зависли/полегли с 500.
+async function tryCreateOrder(sku) {
+  const r = await fetch(`${BASE_URL}/orders`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sku }),
+  });
+  return { status: r.status, body: await r.json() };
 }
 
 async function getOrder(id) {
@@ -148,10 +161,11 @@ async function scenarioPromoOnce(db) {
 }
 
 async function scenarioPromoReleaseOnPaymentFailed(db) {
-  console.log('\nСценарий 4c — промокод освобождается при payment_failed, но не при out_of_stock/delivery_failed');
+  console.log('\nСценарий 4c — промокод и резерв ключа освобождаются при payment_failed, но не при out_of_stock/delivery_failed');
   const before = db.prepare('SELECT used_count FROM promocodes WHERE code = ?').get('WELCOME10').used_count;
 
   const orderA = await createOrder();
+  const reservedKey = db.prepare('SELECT code FROM keys_pool WHERE order_id = ?').get(orderA.id);
   await applyPromo(orderA.id, 'WELCOME10');
   await sendWebhook('evt_release_a', orderA.id, 'failed');
   await sleep(100);
@@ -169,6 +183,11 @@ async function scenarioPromoReleaseOnPaymentFailed(db) {
     afterFail === before,
     `было ${before}, стало ${afterFail}`
   );
+  check('ключ, зарезервированный при создании заказа, был найден', Boolean(reservedKey));
+  check(
+    'резерв ключа снят при payment_failed (Этап 2, задача 2) — ключ снова свободен',
+    db.prepare('SELECT order_id FROM keys_pool WHERE code = ?').get(reservedKey.code).order_id === null
+  );
 
   // Тот же код должен снова успешно примениться другим заказом — слот
   // реально свободен, а не просто "выглядит как до".
@@ -178,6 +197,39 @@ async function scenarioPromoReleaseOnPaymentFailed(db) {
 
   check('тот же промокод повторно применяется другим заказом', reapply.status === 200, `код ${reapply.status}`);
   check('used_count после повторного применения снова +1 от before', afterReapply === before + 1, `получено ${afterReapply}`);
+}
+
+async function scenarioLastUnitRace(db) {
+  console.log('\nСценарий 5 — гонка за последнюю единицу (KEY-GTA5, ровно 1 ключ в пуле), 20 параллельных POST /orders');
+  const attempts = await Promise.all(Array.from({ length: 20 }, () => tryCreateOrder('KEY-GTA5')));
+
+  const succeeded = attempts.filter((a) => a.status === 201);
+  const rejected = attempts.filter((a) => a.status !== 201);
+  const ordersForSku = db.prepare("SELECT COUNT(*) c FROM orders WHERE sku = 'KEY-GTA5'").get().c;
+  const keysClaimed = db
+    .prepare("SELECT COUNT(*) c FROM keys_pool WHERE sku = 'KEY-GTA5' AND order_id IS NOT NULL")
+    .get().c;
+
+  check('ровно 1 из 20 параллельных заказов создан (201)', succeeded.length === 1, `получено ${succeeded.length}`);
+  check(
+    'остальные 19 получили понятный отказ без зависаний (не 201, не 500)',
+    rejected.length === 19 && rejected.every((a) => a.status === 409),
+    `статусы отказов: ${rejected.map((a) => a.status).join(',')}`
+  );
+  check(
+    'в БД нет заказов-призраков от отклонённых попыток (только заказ победителя)',
+    ordersForSku === 1,
+    `заказов на KEY-GTA5: ${ordersForSku}`
+  );
+  check('ровно 1 ключ фактически занят (не 2, никакой двойной резерв)', keysClaimed === 1, `занято ${keysClaimed}`);
+
+  // Резерв должен доходить до реальной доставки, а не просто числиться
+  // занятым в keys_pool — дожимаем оплату победившего заказа до конца.
+  const winner = succeeded[0].body;
+  await sendWebhook(`evt_gta5_win_${Date.now()}`, winner.id, 'paid');
+  await sleep(300);
+  const finalOrder = await getOrder(winner.id);
+  check('заказ-победитель доведён до delivered', finalOrder.status === 'delivered', `статус: ${finalOrder.status}`);
 }
 
 /**
@@ -263,6 +315,7 @@ async function main() {
     await scenarioPromoLimit(db);
     await scenarioPromoOnce(db);
     await scenarioPromoReleaseOnPaymentFailed(db);
+    await scenarioLastUnitRace(db);
     db.close();
 
     await scenarioWebhookBeforeOrder();

@@ -22,18 +22,30 @@ const releasePromoUse = db.prepare(
   'UPDATE promocodes SET used_count = used_count - 1 WHERE code = ? AND used_count > 0'
 );
 
+// Этап 2, задача 2: заказ мог зарезервировать ключ ещё при создании
+// (orderService.createOrder) — если оплата в итоге провалилась, эта
+// бронь должна вернуться в свободный пул, тем же принципом, что и
+// releasePromoUse ниже. WHERE order_id = ? безопасен как no-op для
+// заказов без резерва (товары без пула ключей, заказы в обход
+// orderService) — обновит 0 строк, не упадёт.
+const releaseKeyReservation = db.prepare(
+  'UPDATE keys_pool SET order_id = NULL WHERE order_id = ?'
+);
+
 // Не путать с out_of_stock/delivery_failed (deliveryService.js) — там
 // оплата УЖЕ прошла, освобождать промокод не нужно и небезопасно (это
 // восстановимое состояние Этапа 3, ручной повтор дожимает ТОТ ЖЕ
 // заказ; если бы слот освобождался и тут, его мог перехватить кто-то
 // другой, пока админ ещё не запустил повтор). Освобождение — только
 // для payment_failed, единственного случая, где заказ окончательно и
-// достоверно "не оплачен".
+// достоверно "не оплачен". Та же логика теперь верна и для резерва
+// ключа — см. releaseKeyReservation выше.
 const applyPaymentFailedTxn = db.transaction((orderId) => {
   const result = markPaymentFailed.run(orderId);
   if (result.changes === 1) {
     const order = getOrderPromo.get(orderId);
     if (order && order.promo_code) releasePromoUse.run(order.promo_code);
+    releaseKeyReservation.run(orderId);
   }
   return result.changes;
 });
