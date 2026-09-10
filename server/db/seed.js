@@ -1,13 +1,13 @@
 const db = require('./connection');
 const products = require('./seed-data/products.json');
-const keys = require('./seed-data/keys.json');
+const keysBySku = require('./seed-data/keys.json');
 const promocodes = require('./seed-data/promocodes.json');
 
-// Пул ключей в задании — плоский список без привязки к товару. Задание
-// прямо разрешает: "рабочий флоу покупки достаточно сделать для одного
-// товара" — весь пул отдаём одному товару, остальные видны в каталоге,
-// но без рабочей выдачи.
-const DEMO_SKU = 'KEY-CS2-PRIME';
+// Пул ключей — по SKU. Задание разрешает ограничиться рабочей выдачей для
+// одного товара, но не одним — Этап 2 (гонки/живой остаток/бронь) нуждается
+// в SKU с малым остатком: KEY-GTA5 (ровно 1 ключ — гонка за последнюю
+// единицу), KEY-EFT (3 ключа — демо живого списания остатка/брони). Остальные
+// товары каталога по-прежнему без пула (недоступны для реальной выдачи).
 
 const insertProduct = db.prepare(`
   INSERT OR IGNORE INTO products (sku, name, type, price, currency, image)
@@ -26,12 +26,19 @@ const insertPromo = db.prepare(`
 
 const seed = db.transaction(() => {
   for (const product of products) insertProduct.run(product);
-  for (const code of keys) insertKey.run(code, DEMO_SKU);
+  for (const [sku, codes] of Object.entries(keysBySku)) {
+    for (const code of codes) insertKey.run(code, sku);
+  }
   for (const promo of promocodes) insertPromo.run(promo);
 });
 
 seed();
 
+const totalKeys = Object.values(keysBySku).reduce((sum, codes) => sum + codes.length, 0);
+const skuSummary = Object.entries(keysBySku)
+  .map(([sku, codes]) => `${sku}:${codes.length}`)
+  .join(', ');
+
 console.log(
-  `Сидирование готово: ${products.length} товаров, ${keys.length} ключей → ${DEMO_SKU}, ${promocodes.length} промокодов`
+  `Сидирование готово: ${products.length} товаров, ${totalKeys} ключей (${skuSummary}), ${promocodes.length} промокодов`
 );
