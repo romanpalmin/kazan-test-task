@@ -473,8 +473,47 @@ async function payOrder(orderId, status) {
   pollOrder(orderId, 20); // до ~8с (20 * 400мс) — с запасом на таймаут-ретрай поставщика
 }
 
+// Этап 2, бонус 4 (устойчивость к обновлению страницы/повторному
+// клику). Обновление страницы стирает всё состояние модалки, но не сам
+// заказ на сервере — без этой проверки повторный клик "Купить" на тот
+// же товар честно создал бы второй, независимый заказ (а с задачи 2 это
+// значит ещё и реально занять второй ключ). Запоминаем в localStorage,
+// какой заказ уже "в процессе" по каждому SKU, и при следующей попытке
+// сначала спрашиваем сервер о его реальном статусе — самовосстанавливающаяся
+// проверка (как sweep в задаче 3): если запись протухла (заказ уже
+// финализировался или вовсе не нашёлся), просто продолжаем как обычно,
+// ничего не нужно явно чистить заранее.
+function pendingOrderKey(sku) {
+  return `pendingOrder:${sku}`;
+}
+
 async function buyProduct(sku) {
   openOrderModal();
+  renderLoading('Проверяем заказ…');
+
+  const existingId = localStorage.getItem(pendingOrderKey(sku));
+  if (existingId) {
+    try {
+      const res = await fetch(`orders/${existingId}`);
+      if (res.ok) {
+        const existing = await res.json();
+        if (!FINAL_STATUSES.has(existing.status)) {
+          renderOrder(existing);
+          // paid/delivering — ждут автоматической доставки; если это
+          // прервалось обновлением страницы, поллинг тоже нужно поднять
+          // заново, иначе статус так и останется висеть немым, пока
+          // выдача реально уже идёт на сервере.
+          if (existing.status === 'paid' || existing.status === 'delivering') pollOrder(existing.id, 20);
+          return; // тот же заказ ещё жив — показываем его, новый не создаём
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      // не удалось проверить — не блокируем покупку, просто пробуем создать новый заказ ниже
+    }
+    localStorage.removeItem(pendingOrderKey(sku)); // заказ финализирован/не найден — запись больше не актуальна
+  }
+
   renderLoading('Создаём заказ…');
   try {
     const res = await fetch('orders', {
@@ -487,6 +526,7 @@ async function buyProduct(sku) {
       renderModal(`<p class="order-error">${order.error || 'Не удалось создать заказ'}</p>`);
       return;
     }
+    localStorage.setItem(pendingOrderKey(sku), order.id);
     renderOrder(order);
   } catch (err) {
     console.error(err);
@@ -563,11 +603,30 @@ function initInfoBanner() {
   closeBtn.addEventListener('click', () => banner.remove());
 }
 
+const BUY_CLICK_FEEDBACK_MS = 200;
+
 function initPurchaseFlow() {
   document.getElementById('productGrid').addEventListener('click', (e) => {
     const btn = e.target.closest('.buy-btn');
-    if (!btn) return;
-    buyProduct(btn.dataset.sku);
+    if (!btn || btn.disabled) return;
+    // Этап 2, бонус 4: отключаем кнопку синхронно, ДО первого await внутри
+    // buyProduct — закрывает по-настоящему быстрый повторный клик на уровне
+    // самого DOM-события, ещё до того, как успеет открыться модалка.
+    //
+    // Небольшая намеренная задержка (BUY_CLICK_FEEDBACK_MS) ПЕРЕД
+    // открытием модалки — не технически необходима (сам disabled уже
+    // защищает), а ради видимой обратной связи: без неё модалка
+    // открывается в тот же такт JS и мгновенно перекрывает кнопку, глазами
+    // "посеревшее" состояние физически невозможно заметить — реальность
+    // защиты была бы видна только в сетевой вкладке, не на экране.
+    // 200мс — достаточно, чтобы заметить, недостаточно, чтобы ощущаться
+    // как лаг интерфейса.
+    btn.disabled = true;
+    setTimeout(() => {
+      buyProduct(btn.dataset.sku).finally(() => {
+        btn.disabled = false;
+      });
+    }, BUY_CLICK_FEEDBACK_MS);
   });
 
   document.getElementById('orderModalClose').addEventListener('click', closeOrderModal);
