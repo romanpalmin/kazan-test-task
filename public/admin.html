@@ -50,6 +50,15 @@
     <span id="restockResult"></span>
   </div>
 
+  <h2>Изменить цену (Этап 2, задача 1 — демо живого обновления витрины)</h2>
+  <div class="restock-form">
+    <input id="priceSku" type="text" placeholder="sku, например KEY-CS2-PRIME" size="24">
+    <input id="priceValue" type="number" min="1" size="6" placeholder="новая цена">
+    <button id="priceBtn">Изменить</button>
+    <span id="priceResult"></span>
+  </div>
+  <p style="font-size:12px;color:#888;margin-top:4px">Открой витрину в соседней вкладке — цена обновится там сама, без перезагрузки.</p>
+
   <h2>Оплачен, но не выдан <button id="refreshBtn">Обновить</button></h2>
   <table id="stuckTable">
     <thead><tr><th>Заказ</th><th>Товар</th><th>SKU</th><th>Статус</th><th>Обновлён</th><th></th></tr></thead>

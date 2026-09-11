@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const db = require('../db/connection');
 const { drainPendingPayment } = require('./paymentService');
 const { deliverKey } = require('./deliveryService');
+const { broadcastStock } = require('./stockEvents');
 
 const getProduct = db.prepare('SELECT sku, type FROM products WHERE sku = ?');
 const insertOrder = db.prepare(`
@@ -56,6 +57,7 @@ function createOrder(sku) {
   }
   const id = `ord_${crypto.randomUUID()}`;
   createOrderTxn(id, sku, product.type);
+  broadcastStock(sku); // резерв прошёл успешно (иначе createOrderTxn бросил бы выше) — остаток реально изменился
 
   // Вебхук мог прийти раньше, чем мы успели создать заказ (не по
   // порядку) — если платёж уже запаркован под этим id, применяем его

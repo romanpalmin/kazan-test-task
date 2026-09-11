@@ -1,5 +1,5 @@
 const express = require('express');
-const { listStuckOrders, getStockLevels, restock } = require('../services/adminService');
+const { listStuckOrders, getStockLevels, restock, changePrice } = require('../services/adminService');
 const { deliverKey } = require('../services/deliveryService');
 const { findOrder } = require('../services/orderService');
 
@@ -53,6 +53,22 @@ router.post('/keys/restock', (req, res) => {
   try {
     const codes = restock(sku, n);
     res.status(201).json({ sku, added: codes.length, stock: getStockLevels() });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+// Этап 2, задача 1: изменить цену SKU "вживую" — демонстрирует "актуальная
+// цена видна до оплаты, даже если товар подорожал", у которого иначе не
+// было бы способа реально сработать (цена в проекте до этого была статикой).
+router.post('/products/:sku/price', (req, res) => {
+  const { price } = req.body;
+  const p = Number(price);
+  if (!Number.isInteger(p) || p < 1) {
+    return res.status(400).json({ error: 'price обязателен и должен быть положительным целым числом' });
+  }
+  try {
+    res.json(changePrice(req.params.sku, p));
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });
   }

@@ -1,4 +1,5 @@
 const db = require('../db/connection');
+const { broadcastStock } = require('./stockEvents');
 
 const now = "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')";
 
@@ -10,6 +11,7 @@ const markPaymentFailed = db.prepare(
 );
 const getOrderId = db.prepare('SELECT id FROM orders WHERE id = ?');
 const getOrderPromo = db.prepare('SELECT promo_code FROM orders WHERE id = ?');
+const getOrderSku = db.prepare('SELECT sku FROM orders WHERE id = ?');
 
 // Освободить слот промокода (Этап 4) — used_count не должен считаться
 // потраченным, если оплата, под которую он взят, не прошла. Клэмп
@@ -70,6 +72,10 @@ function applyPayment(orderId, status) {
     return result.changes === 1 ? status : null;
   }
   const changes = applyPaymentFailedTxn(orderId);
+  if (changes === 1) {
+    const order = getOrderSku.get(orderId);
+    if (order) broadcastStock(order.sku); // no-op внутри для SKU без пула ключей
+  }
   return changes === 1 ? status : null;
 }
 

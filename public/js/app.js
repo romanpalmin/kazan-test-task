@@ -19,8 +19,27 @@ function productCardHtml(product) {
   // цена (x2 от текущей), как в макете. Решение Романа: задание не
   // запрещает, свобода в оформлении витрины.
   const oldPrice = product.price * 2;
+  // stock: число только для type='key' (реальный пул есть — Этап 2,
+  // задачи 1/2), null — для остальных 9 SKU (пула нет вообще, "0" был бы
+  // ложью, что он раньше был и кончился). Строка остатка теперь рисуется
+  // ВСЕГДА (даже при null — просто с текстом "Отсутствуют"), а не
+  // условно: так у всех карточек одинаковое число строк, и цена всегда
+  // оказывается на одной и той же линии по всему ряду — раньше, пока
+  // строка остатка была то есть, то её не было, цена "гуляла" по высоте.
+  // data-currency — чтобы applyLiveUpdate ниже могла дорисовать цену при
+  // живом обновлении, не трогая остальную карточку и не гадая по уже
+  // отрисованному тексту.
+  const outOfStock = product.stock === 0;
+  const stockText =
+    product.stock === null ? 'Отсутствуют' : outOfStock ? 'Нет в наличии' : `Осталось: ${product.stock}`;
+  // is-empty (красный, жирный) — только для реально распроданного (stock
+  // === 0), это тревожное "раскупили только что" состояние. Для null
+  // ("Отсутствуют" — учёта остатка для этого SKU просто нет и не было)
+  // тот же красный цвет был бы вводящим в заблуждение: это не "срочно
+  // кончилось", это факт про сам товар, обычный приглушённый стиль.
+  const stockHtml = `<div class="product-card-stock${outOfStock ? ' is-empty' : ''}">${stockText}</div>`;
   return `
-    <article class="product-card" data-sku="${product.sku}">
+    <article class="product-card" data-sku="${product.sku}" data-currency="${product.currency}">
       <div class="product-card-thumb">
         <img class="thumb-img" src="${product.image}" alt="" />
         <span class="thumb-type-badge">${icon}</span>
@@ -30,9 +49,60 @@ function productCardHtml(product) {
         <span class="price-now">${product.price} ${currency}</span>
         <span class="price-old">${oldPrice} ${currency}</span>
       </div>
-      <button class="btn-primary buy-btn" data-sku="${product.sku}">Купить</button>
+      ${stockHtml}
+      <button class="btn-primary buy-btn" data-sku="${product.sku}" ${outOfStock ? 'disabled' : ''}>${
+        outOfStock ? 'Нет в наличии' : 'Купить'
+      }</button>
     </article>
   `;
+}
+
+// Этап 2, задача 1 (живая витрина). Точечно обновляет уже отрисованную
+// карточку по data-sku — не перерисовывает всю сетку целиком (без
+// мигания, не сбрасывает состояние других открытых модалок/скролла).
+// Если карточки с этим sku на странице нет (например, она с другого
+// экрана каталога, которого сейчас нет) — событие просто игнорируется.
+function applyLiveUpdate(msg) {
+  const card = document.querySelector(`.product-card[data-sku="${CSS.escape(msg.sku)}"]`);
+  if (!card) return;
+
+  if (msg.type === 'stock') {
+    const stockEl = card.querySelector('.product-card-stock');
+    const btn = card.querySelector('.buy-btn');
+    const outOfStock = msg.stock === 0;
+    if (stockEl) {
+      stockEl.textContent = outOfStock ? 'Нет в наличии' : `Осталось: ${msg.stock}`;
+      stockEl.classList.toggle('is-empty', outOfStock);
+    }
+    if (btn) {
+      btn.disabled = outOfStock;
+      btn.textContent = outOfStock ? 'Нет в наличии' : 'Купить';
+    }
+  } else if (msg.type === 'price') {
+    const currency = currencySymbol(card.dataset.currency);
+    const priceNow = card.querySelector('.price-now');
+    const priceOld = card.querySelector('.price-old');
+    if (priceNow) priceNow.textContent = `${msg.price} ${currency}`;
+    if (priceOld) priceOld.textContent = `${msg.price * 2} ${currency}`;
+  }
+}
+
+// EventSource сам переподключается при обрыве связи (браузерная часть
+// спецификации SSE) — здесь не нужна ручная логика реконнекта. На каждое
+// (пере)подключение, включая самое первое, подтягиваем каталог целиком
+// заново: сама SSE не хранит буфер пропущенных за время разрыва событий,
+// а полный refetch — простой и надёжный способ не разъехаться с сервером
+// после любого обрыва, а не только поймать events дальше по потоку.
+function initLiveUpdates() {
+  const es = new EventSource('events');
+  es.onmessage = (e) => {
+    try {
+      applyLiveUpdate(JSON.parse(e.data));
+    } catch (err) {
+      console.error('Не удалось разобрать live-событие:', err);
+    }
+  };
+  es.onopen = () => loadProducts();
 }
 
 function currencySymbol(code) {
@@ -447,3 +517,4 @@ initBannerCarousel();
 initPurchaseFlow();
 initHistoryPanel();
 initInfoBanner();
+initLiveUpdates();

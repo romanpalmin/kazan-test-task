@@ -471,6 +471,8 @@ body {
   cursor: pointer;
 }
 .btn-primary:hover { opacity: 0.85; }
+.btn-primary:disabled { background: var(--text-dim); cursor: not-allowed; opacity: 0.7; }
+.btn-primary:disabled:hover { opacity: 0.7; }
 .topup-row .btn-primary { height: 56px; padding: 0 20px; }
 
 /* Info banner — предупреждение ревьюеру, что рабочая выдача есть
@@ -569,6 +571,8 @@ main { max-width: 1100px; margin: 0 auto; padding: 0 20px 60px; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.product-card-stock { padding: 0 14px; font-size: 12px; color: var(--text-dim); }
+.product-card-stock.is-empty { color: #b91c1c; font-weight: 600; }
 .product-card-price { padding: 0 14px; display: flex; align-items: baseline; gap: 6px; }
 .price-now {
   font-family: "Montserrat", -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -578,7 +582,17 @@ main { max-width: 1100px; margin: 0 auto; padding: 0 20px 60px; }
   color: #4C9A2A;
 }
 .price-old { font-size: 12px; color: var(--text-dim); text-decoration: line-through; }
-.product-card .btn-primary { margin: 0 14px; width: calc(100% - 28px); text-align: center; }
+.product-card .btn-primary {
+  /* margin-top: auto в flex-колонке карточки — прижимает кнопку к низу
+     независимо от того, сколько строк контента выше (есть ли остаток,
+     ест ли decorative old-price и т.п.), а не просто "0" — иначе кнопка
+     съезжала на разную высоту в соседних карточках одного ряда грида
+     (grid растягивает карточки на одну высоту, но flex-контент внутри
+     без auto-отступа копится наверху, оставляя пустоту снизу). */
+  margin: auto 14px 0;
+  width: calc(100% - 28px);
+  text-align: center;
+}
 
 @media (max-width: 640px) {
   .header-inner { flex-wrap: wrap; }

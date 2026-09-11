@@ -1,5 +1,7 @@
 const crypto = require('crypto');
 const db = require('../db/connection');
+const { broadcast } = require('./eventBus');
+const { broadcastStock } = require('./stockEvents');
 
 const listStuckStmt = db.prepare(`
   SELECT orders.*, products.name AS product_name
@@ -60,7 +62,25 @@ function restock(sku, count) {
     insertKey.run(code, sku);
     codes.push(code);
   }
+  broadcastStock(sku); // Этап 2, задача 1 — остаток вырос, все открытые вкладки должны узнать сразу
   return codes;
 }
 
-module.exports = { listStuckOrders, getStockLevels, restock };
+const updatePrice = db.prepare('UPDATE products SET price = ? WHERE sku = ?');
+
+// Этап 2, задача 1: единственный способ в проекте реально изменить цену —
+// до этого она была статикой из seed. Существует, чтобы у требования
+// "актуальная цена видна до оплаты, даже если товар подорожал" было чем
+// реально сработать, а не только гипотетической строчкой в условии.
+function changePrice(sku, price) {
+  if (!getProduct.get(sku)) {
+    const err = new Error(`Неизвестный sku: ${sku}`);
+    err.status = 400;
+    throw err;
+  }
+  updatePrice.run(price, sku);
+  broadcast({ type: 'price', sku, price });
+  return { sku, price };
+}
+
+module.exports = { listStuckOrders, getStockLevels, restock, changePrice };

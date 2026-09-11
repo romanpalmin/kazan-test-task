@@ -125,6 +125,26 @@ document.getElementById('restockBtn').addEventListener('click', async () => {
   }
 });
 
+document.getElementById('priceBtn').addEventListener('click', async () => {
+  const sku = document.getElementById('priceSku').value.trim();
+  const price = Number(document.getElementById('priceValue').value);
+  const resultEl = document.getElementById('priceResult');
+  if (!sku || !Number.isInteger(price) || price < 1) {
+    resultEl.textContent = 'Укажите sku и цену (целое число)';
+    return;
+  }
+  try {
+    const result = await adminFetch(`admin/products/${encodeURIComponent(sku)}/price`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ price }),
+    });
+    resultEl.textContent = `Новая цена ${result.sku}: ${result.price}`;
+  } catch (err) {
+    resultEl.textContent = err.message;
+  }
+});
+
 document.getElementById('refreshBtn').addEventListener('click', refreshAll);
 
 async function refreshAll() {
