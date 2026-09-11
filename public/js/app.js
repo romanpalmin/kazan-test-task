@@ -1,5 +1,8 @@
-async function loadProducts() {
+// Этап 2, бонус 5 (поиск по каталогу тысяч позиций). Без q/type — прежнее
+// поведение: весь маленький "настоящий" каталог, как было до бонуса 5.
+async function loadDefaultCatalog() {
   const grid = document.getElementById('productGrid');
+  document.getElementById('productsHeading').textContent = 'Популярные товары';
   try {
     const res = await fetch('products');
     const products = await res.json();
@@ -8,6 +11,104 @@ async function loadProducts() {
     grid.innerHTML = '<p class="product-grid-loading">Не удалось загрузить каталог.</p>';
     console.error(err);
   }
+}
+
+let currentSearch = { q: '', type: '' };
+let searchAbortController = null;
+
+async function runSearch() {
+  const grid = document.getElementById('productGrid');
+  const heading = document.getElementById('productsHeading');
+  const { q, type } = currentSearch;
+
+  // Отменяем предыдущий, ещё не ответивший запрос — без этого устаревший,
+  // но медленно пришедший ответ на старый ввод мог бы перетереть на
+  // экране результат более свежего, уже введённого запроса (условие
+  // задачи требует именно это: "устаревшие ответы не перетирают свежие").
+  if (searchAbortController) searchAbortController.abort();
+  const controller = new AbortController();
+  searchAbortController = controller;
+
+  const params = new URLSearchParams();
+  if (q) params.set('q', q);
+  if (type) params.set('type', type);
+
+  try {
+    const res = await fetch(`products?${params.toString()}`, { signal: controller.signal });
+    const data = await res.json();
+    grid.innerHTML = data.results.length
+      ? data.results.map(productCardHtml).join('')
+      : '<p class="product-grid-loading">Ничего не найдено.</p>';
+    heading.textContent = `Результаты поиска — показано ${data.results.length} из ${data.total}`;
+  } catch (err) {
+    if (err.name === 'AbortError') return; // отменили сами — новый запрос уже в пути, это не ошибка
+    grid.innerHTML = '<p class="product-grid-loading">Не удалось выполнить поиск.</p>';
+    console.error(err);
+  }
+}
+
+// Общая точка входа — используется и при первой загрузке страницы, и при
+// восстановлении SSE-соединения (см. initLiveUpdates): если в этот момент
+// активен поиск, реконнект должен обновить ИМЕННО его, а не молча
+// подменить экран на дефолтный каталог.
+function refreshCatalog() {
+  return currentSearch.q || currentSearch.type ? runSearch() : loadDefaultCatalog();
+}
+
+function readSearchStateFromUrl() {
+  const params = new URLSearchParams(location.search);
+  return { q: params.get('q') || '', type: params.get('type') || '' };
+}
+
+// replaceState, не pushState — фильтры сохраняются в URL (можно скопировать
+// ссылку или обновить страницу без потери поиска), но история браузера не
+// должна получать отдельную запись на каждую напечатанную букву.
+function writeSearchStateToUrl({ q, type }) {
+  const params = new URLSearchParams();
+  if (q) params.set('q', q);
+  if (type) params.set('type', type);
+  const qs = params.toString();
+  history.replaceState(null, '', qs ? `${location.pathname}?${qs}` : location.pathname);
+}
+
+const SEARCH_DEBOUNCE_MS = 250;
+let searchDebounceTimer = null;
+
+function initSearch() {
+  const input = document.getElementById('searchInput');
+  const typeFilter = document.getElementById('searchTypeFilter');
+  const submitBtn = document.getElementById('searchSubmitBtn');
+
+  // Восстанавливаем состояние из URL при загрузке страницы — обновление
+  // страницы или переход по скопированной ссылке не сбрасывает поиск.
+  currentSearch = readSearchStateFromUrl();
+  input.value = currentSearch.q;
+  typeFilter.value = currentSearch.type;
+
+  function searchNow() {
+    clearTimeout(searchDebounceTimer);
+    writeSearchStateToUrl(currentSearch);
+    refreshCatalog();
+  }
+
+  input.addEventListener('input', () => {
+    currentSearch.q = input.value.trim();
+    // Debounce — не бить сервер на каждую нажатую клавишу, ждём паузы в
+    // наборе текста.
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(searchNow, SEARCH_DEBOUNCE_MS);
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') searchNow(); // не ждать паузы, если явно попросили
+  });
+  typeFilter.addEventListener('change', () => {
+    currentSearch.type = typeFilter.value;
+    searchNow(); // явный выбор из списка — не печать, debounce не нужен
+  });
+  submitBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    searchNow();
+  });
 }
 
 const TYPE_ICON = { key: '🔑', topup: '💳', subscription: '⭐', giftcard: '🎁' };
@@ -102,7 +203,7 @@ function initLiveUpdates() {
       console.error('Не удалось разобрать live-событие:', err);
     }
   };
-  es.onopen = () => loadProducts();
+  es.onopen = () => refreshCatalog(); // если активен поиск — обновит именно его, не молча подменит на дефолтный каталог
 }
 
 function currencySymbol(code) {
@@ -638,7 +739,8 @@ function initPurchaseFlow() {
   });
 }
 
-loadProducts();
+initSearch(); // до refreshCatalog() — заполняет currentSearch из URL, чтобы первая загрузка сразу учла восстановленный поиск
+refreshCatalog();
 initCatalogMenu();
 initCurrencySwitch();
 initBannerCarousel();

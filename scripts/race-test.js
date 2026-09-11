@@ -333,7 +333,11 @@ async function main() {
   for (const suffix of ['', '-wal', '-shm']) {
     fs.rmSync(path.join(ROOT, 'data', `app.db${suffix}`), { force: true });
   }
-  execSync('npm run seed', { cwd: ROOT, stdio: 'ignore' });
+  // SYNTHETIC_PRODUCT_COUNT=0 — Этап 2, бонус 5, генерирует 5000 строк по
+  // умолчанию, полезных только для демо поиска; здесь они лишь замедлили
+  // бы сброс БД между сценариями без всякой пользы для того, что эти
+  // сценарии проверяют.
+  execSync('npm run seed', { cwd: ROOT, stdio: 'ignore', env: { ...process.env, SYNTHETIC_PRODUCT_COUNT: '0' } });
 
   console.log(`Стартуем сервер на порту ${PORT} (шум поставщика выключен — детерминированные сценарии)...`);
   const server = spawn('node', ['server/index.js'], {

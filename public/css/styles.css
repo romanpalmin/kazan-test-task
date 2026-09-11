@@ -181,6 +181,17 @@ body {
   cursor: pointer;
 }
 .search-submit:hover { opacity: 0.85; }
+.search-type-filter {
+  flex-shrink: 0;
+  max-width: 130px;
+  border: none;
+  border-left: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 13px;
+  padding: 0 6px;
+  cursor: pointer;
+}
 
 .header-icons {
   margin-left: auto;

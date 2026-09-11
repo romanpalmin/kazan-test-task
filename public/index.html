@@ -79,9 +79,16 @@
         </div>
       </div>
       <div class="search">
-        <input type="text" placeholder="Игра, приложение или услуга..." />
+        <input type="text" id="searchInput" placeholder="Игра, приложение или услуга..." />
+        <select class="search-type-filter" id="searchTypeFilter" aria-label="Фильтр по типу">
+          <option value="">Все типы</option>
+          <option value="key">Ключи</option>
+          <option value="topup">Пополнения</option>
+          <option value="subscription">Подписки</option>
+          <option value="giftcard">Гифт-карты</option>
+        </select>
         <button class="search-fav" aria-label="Избранное">♡</button>
-        <button class="search-submit" aria-label="Поиск">🔍</button>
+        <button class="search-submit" id="searchSubmitBtn" aria-label="Поиск">🔍</button>
       </div>
       <button class="header-icons" id="historyToggle" aria-label="История заказов">👤</button>
     </div>
@@ -161,7 +168,7 @@
     </div>
 
     <section class="products">
-      <h2>Популярные товары</h2>
+      <h2 id="productsHeading">Популярные товары</h2>
       <div class="product-grid" id="productGrid">
         <p class="product-grid-loading">Загружаем каталог…</p>
       </div>
