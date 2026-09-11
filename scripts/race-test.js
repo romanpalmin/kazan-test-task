@@ -281,6 +281,53 @@ async function scenarioWebhookBeforeOrder() {
   );
 }
 
+/**
+ * Сценарий 6 (Этап 2, задача 3 — бронь с таймером) — не ждём реальный
+ * TTL (дефолт 60с, см. orderService.js RESERVATION_TTL_SECONDS): вместо
+ * этого напрямую состариваем reserved_until в БД, тем же приёмом, что и
+ * сценарий 3 выше — манипулируем внутренним состоянием напрямую вместо
+ * ожидания реального времени или изобретения тестового API. Проверяем
+ * именно safety-net sweep в orderService.createOrder (подметает
+ * просроченные брони при следующей попытке купить тот же SKU), а не сам
+ * setTimeout — тот и так тривиально сработает по таймеру, интересна
+ * гарантия на случай, если бы он потерялся (перезапуск сервера).
+ */
+async function scenarioReservationExpiry() {
+  console.log('\nСценарий 6 — бронь истекает без оплаты, ключ возвращается в пул (KEY-EFT)');
+  const writableDb = require('../server/db/connection');
+
+  const order = await createOrder('KEY-EFT');
+  const reservedBefore = writableDb.prepare('SELECT reserved_until FROM orders WHERE id = ?').get(order.id);
+  check('заказ получил reserved_until при создании', Boolean(reservedBefore && reservedBefore.reserved_until));
+
+  writableDb
+    .prepare("UPDATE orders SET reserved_until = strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-1 second') WHERE id = ?")
+    .run(order.id);
+
+  // Следующая попытка купить тот же SKU должна подмести истёкшую бронь
+  // и успешно забрать освободившийся ключ.
+  const next = await createOrder('KEY-EFT');
+  const expiredOrder = await getOrder(order.id);
+
+  check(
+    'истёкший заказ переведён в reservation_expired',
+    expiredOrder.status === 'reservation_expired',
+    `статус: ${expiredOrder.status}`
+  );
+  check('ключ освобождён и переиспользован следующим заказом', next.status === 'created', `статус: ${next.status}`);
+
+  // Поздняя оплата на уже истёкший заказ не должна его "оживить" — тот
+  // же CAS-гвард (`WHERE status = 'created'`), что защищает вообще все
+  // переходы в проекте.
+  await sendWebhook(`evt_late_${Date.now()}`, order.id, 'paid');
+  const stillExpired = await getOrder(order.id);
+  check(
+    'поздняя оплата на истёкший заказ не применяется (тот же CAS-гвард)',
+    stillExpired.status === 'reservation_expired',
+    `статус: ${stillExpired.status}`
+  );
+}
+
 async function main() {
   console.log('Сброс БД в чистое сидированное состояние...');
   for (const suffix of ['', '-wal', '-shm']) {
@@ -319,6 +366,7 @@ async function main() {
     db.close();
 
     await scenarioWebhookBeforeOrder();
+    await scenarioReservationExpiry();
   } finally {
     server.kill();
   }

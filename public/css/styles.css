@@ -656,6 +656,16 @@ main { max-width: 1100px; margin: 0 auto; padding: 0 20px 60px; }
 }
 .order-error { color: #b91c1c; font-size: 14px; margin: 0 0 4px; }
 .order-waiting { color: var(--text-dim); font-size: 14px; margin: 0 0 4px; }
+.order-reservation {
+  background: #fffbeb;
+  border: 1px dashed #d97706;
+  color: #b45309;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 14px;
+}
 
 /* Промокод (Этап 4) — поле в модалке покупки, до оплаты. */
 .order-promo { display: flex; gap: 8px; margin: 0 0 10px; }

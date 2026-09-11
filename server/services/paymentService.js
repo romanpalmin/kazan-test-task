@@ -1,5 +1,6 @@
 const db = require('../db/connection');
 const { broadcastStock } = require('./stockEvents');
+const { releaseOrderHold } = require('./releaseHold');
 
 const now = "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')";
 
@@ -10,45 +11,19 @@ const markPaymentFailed = db.prepare(
   `UPDATE orders SET status = 'payment_failed', updated_at = ${now} WHERE id = ? AND status = 'created'`
 );
 const getOrderId = db.prepare('SELECT id FROM orders WHERE id = ?');
-const getOrderPromo = db.prepare('SELECT promo_code FROM orders WHERE id = ?');
 const getOrderSku = db.prepare('SELECT sku FROM orders WHERE id = ?');
 
-// Освободить слот промокода (Этап 4) — used_count не должен считаться
-// потраченным, если оплата, под которую он взят, не прошла. Клэмп
-// `used_count > 0` — чисто defense-in-depth, отрицательным он стать не
-// должен: у одного заказа не может быть двух releasePromoUse (заказ
-// либо не в 'created' и promo больше не применить, либо уже
-// payment_failed и повторно сюда не попадёт — markPaymentFailed сам
-// себе guard, changes===1 только один раз за жизнь заказа).
-const releasePromoUse = db.prepare(
-  'UPDATE promocodes SET used_count = used_count - 1 WHERE code = ? AND used_count > 0'
-);
-
-// Этап 2, задача 2: заказ мог зарезервировать ключ ещё при создании
-// (orderService.createOrder) — если оплата в итоге провалилась, эта
-// бронь должна вернуться в свободный пул, тем же принципом, что и
-// releasePromoUse ниже. WHERE order_id = ? безопасен как no-op для
-// заказов без резерва (товары без пула ключей, заказы в обход
-// orderService) — обновит 0 строк, не упадёт.
-const releaseKeyReservation = db.prepare(
-  'UPDATE keys_pool SET order_id = NULL WHERE order_id = ?'
-);
-
 // Не путать с out_of_stock/delivery_failed (deliveryService.js) — там
-// оплата УЖЕ прошла, освобождать промокод не нужно и небезопасно (это
-// восстановимое состояние Этапа 3, ручной повтор дожимает ТОТ ЖЕ
+// оплата УЖЕ прошла, освобождать промокод/резерв не нужно и небезопасно
+// (это восстановимое состояние Этапа 3, ручной повтор дожимает ТОТ ЖЕ
 // заказ; если бы слот освобождался и тут, его мог перехватить кто-то
-// другой, пока админ ещё не запустил повтор). Освобождение — только
-// для payment_failed, единственного случая, где заказ окончательно и
-// достоверно "не оплачен". Та же логика теперь верна и для резерва
-// ключа — см. releaseKeyReservation выше.
+// другой, пока админ ещё не запустил повтор). Освобождение (см.
+// releaseHold.js — общая логика с reservation_expired, Этап 2 задача 3)
+// — только для payment_failed, единственного случая здесь, где заказ
+// окончательно и достоверно "не оплачен".
 const applyPaymentFailedTxn = db.transaction((orderId) => {
   const result = markPaymentFailed.run(orderId);
-  if (result.changes === 1) {
-    const order = getOrderPromo.get(orderId);
-    if (order && order.promo_code) releasePromoUse.run(order.promo_code);
-    releaseKeyReservation.run(orderId);
-  }
+  if (result.changes === 1) releaseOrderHold(orderId);
   return result.changes;
 });
 

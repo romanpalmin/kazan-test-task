@@ -207,9 +207,16 @@ const STATUS_LABEL = {
   out_of_stock: 'Ключа нет в наличии',
   delivery_failed: 'Не удалось выдать ключ',
   payment_failed: 'Оплата не прошла',
+  reservation_expired: 'Бронь истекла',
 };
 
-const FINAL_STATUSES = new Set(['delivered', 'out_of_stock', 'delivery_failed', 'payment_failed']);
+const FINAL_STATUSES = new Set([
+  'delivered',
+  'out_of_stock',
+  'delivery_failed',
+  'payment_failed',
+  'reservation_expired',
+]);
 
 let pollTimer = null;
 
@@ -227,12 +234,26 @@ function stopPolling() {
   pollTimer = null;
 }
 
+// Этап 2, задача 3 (бронь с таймером). Отдельный от pollTimer — считает
+// локально, тикает раз в секунду чисто на клиенте, не дёргает сервер.
+// Источник правды по ИСТЕЧЕНИИ — всё равно сервер (см. startReservationCountdown
+// ниже): по достижении 0 клиент переспрашивает реальный статус, а не
+// просто рисует "истекло" сам по себе — часы браузера и сервера могут
+// немного разойтись.
+let reservationTimer = null;
+
+function stopReservationCountdown() {
+  clearInterval(reservationTimer);
+  reservationTimer = null;
+}
+
 function openOrderModal() {
   document.getElementById('orderModalOverlay').hidden = false;
 }
 
 function closeOrderModal() {
   stopPolling();
+  stopReservationCountdown();
   document.getElementById('orderModalOverlay').hidden = true;
 }
 
@@ -244,9 +265,51 @@ function renderLoading(text) {
   renderModal(`<p class="order-status-label">${text}</p>`);
 }
 
+// Этап 2, задача 3: тикающий обратный отсчёт до order.reserved_until.
+// По достижении 0 — не рисуем "истекло" сами по себе (часы браузера и
+// сервера могут разойтись), а переспрашиваем реальный статус заказа и
+// заново вызываем renderOrder с тем, что реально вернул сервер (обычно
+// это и есть reservation_expired, но если человек успел нажать
+// "Оплатить" буквально в последнюю секунду — увидит актуальный статус,
+// а не ложное "бронь истекла" поверх уже идущей оплаты).
+function startReservationCountdown(order) {
+  stopReservationCountdown();
+  const el = document.getElementById('reservationCountdown');
+  if (!el) return;
+
+  function tick() {
+    const msLeft = new Date(order.reserved_until).getTime() - Date.now();
+    if (msLeft <= 0) {
+      stopReservationCountdown();
+      el.textContent = 'Бронь истекает…';
+      fetch(`orders/${order.id}`)
+        .then((res) => res.json())
+        .then(renderOrder)
+        .catch(() => {});
+      return;
+    }
+    const totalSeconds = Math.ceil(msLeft / 1000);
+    const m = Math.floor(totalSeconds / 60);
+    const s = totalSeconds % 60;
+    el.textContent = `Бронь истекает через ${m}:${String(s).padStart(2, '0')}`;
+  }
+  tick();
+  reservationTimer = setInterval(tick, 1000);
+}
+
 function renderOrder(order) {
+  stopReservationCountdown(); // любая перерисовка сначала гасит старый счётчик — новый (если нужен) заведётся ниже заново
   const label = STATUS_LABEL[order.status] || order.status;
   const idLine = `<p class="order-status-id">Заказ ${order.id}</p>`;
+
+  if (order.status === 'reservation_expired') {
+    renderModal(`
+      <p class="order-status-label">${label}</p>
+      ${idLine}
+      <p class="order-error">Бронь истекла — оформите заказ заново.</p>
+    `);
+    return;
+  }
 
   if (order.status === 'created') {
     // Промокод (Этап 4) — поле прямо в модалке покупки, до оплаты.
@@ -264,10 +327,15 @@ function renderOrder(order) {
         </div>
         <p class="order-error" id="promoError" hidden></p>
       `;
+    // Строка обратного отсчёта — только у заказов с реальным резервом
+    // (type='key'); для остальных reserved_until === null, ничего не
+    // рисуем.
+    const reservationBlock = order.reserved_until ? `<p class="order-reservation" id="reservationCountdown"></p>` : '';
 
     renderModal(`
       <p class="order-status-label">${label}</p>
       ${idLine}
+      ${reservationBlock}
       ${promoBlock}
       <div class="order-actions">
         <button class="btn-primary" id="paySuccessBtn">Оплатить (успех)</button>
@@ -276,6 +344,7 @@ function renderOrder(order) {
     `);
     document.getElementById('paySuccessBtn').addEventListener('click', () => payOrder(order.id, 'paid'));
     document.getElementById('payFailBtn').addEventListener('click', () => payOrder(order.id, 'failed'));
+    if (order.reserved_until) startReservationCountdown(order);
 
     if (!order.promo_code) {
       const promoInput = document.getElementById('promoInput');

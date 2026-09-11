@@ -24,6 +24,11 @@ CREATE TABLE IF NOT EXISTS promocodes (
 );
 
 -- Заказы — состояние из docs/task-conditions.md "Статусы заказа".
+-- reserved_until — Этап 2 (второй этап тестового), задача 3: до какого
+-- момента бронь ключа (см. keys_pool ниже) держится без оплаты. NULL —
+-- для заказов без резерва (товары без пула ключей). Статус
+-- 'reservation_expired' — терминальный, наступает из 'created', когда
+-- этот момент прошёл без оплаты (см. orderService.js).
 CREATE TABLE IF NOT EXISTS orders (
   id                TEXT PRIMARY KEY,
   sku               TEXT NOT NULL REFERENCES products(sku),
@@ -32,6 +37,7 @@ CREATE TABLE IF NOT EXISTS orders (
   issue_request_id  TEXT,
   promo_code        TEXT REFERENCES promocodes(code), -- Этап 4, см. таблицу promocodes ниже
   discount_amount   INTEGER NOT NULL DEFAULT 0,
+  reserved_until    TEXT,
   created_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
   updated_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
